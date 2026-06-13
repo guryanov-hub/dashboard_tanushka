@@ -180,7 +180,7 @@
 
 <!-- Tennis WTA -->
 <div class="card" id="tennis-card" style="margin-bottom:20px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="icon-wrap">
         <i data-lucide="trophy" class="accent" style="width:20px;height:20px;"></i>
@@ -190,19 +190,18 @@
         <div style="font-size:14px;font-weight:600;">Українські гравчині</div>
       </div>
     </div>
-    <button onclick="fetchTennis()" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">↻ Оновити</button>
-  </div>
-
-  <div id="tennis-api-row" style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
-    <input type="password" id="tennis-api-key" placeholder="Google AI Studio API Key (AIza...)"
-      style="flex:1;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f8fafc;padding:6px 12px;font-size:12px;outline:none;" />
-    <button onclick="saveTennisKey()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Завантажити</button>
+    <div id="tennis-api-row" style="display:flex;align-items:center;gap:6px;">
+      <input type="password" id="tennis-api-key" placeholder="API Key"
+        style="width:120px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f8fafc;padding:4px 8px;font-size:11px;outline:none;" />
+      <button onclick="saveTennisKey()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;">Зберегти</button>
+      <button onclick="fetchTennis()" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;">↻ Оновити</button>
+    </div>
   </div>
 
   <div id="tennis-tabs" style="display:flex;gap:6px;background:#0f172a;border-radius:10px;padding:4px;margin-bottom:14px;overflow-x:auto;"></div>
 
   <div id="tennis-content">
-    <div class="muted" style="text-align:center;padding:24px;font-size:13px;">Введіть Google AI Studio API ключ та натисніть «Завантажити»<br><span style="font-size:11px">Безкоштовно · aistudio.google.com/apikey</span></div>
+    <div class="muted" style="text-align:center;padding:24px;font-size:13px;">Введіть API ключ та натисніть «Оновити»</div>
   </div>
 </div>
 
@@ -535,7 +534,7 @@ function renderTennisDay() {
     `<div class="inset fade-in" style="margin-bottom:10px;">
       <div class="muted" style="font-size:11px;margin-bottom:4px;">${m.tournament}</div>
       <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${m.player} vs ${m.opponent_flag||''} ${m.opponent}</div>
-      <div style="font-size:12px;color:#f97316;">🕐 ${m.time_kyiv || m.time || 'TBD'} (Київ)</div>
+      <div style="font-size:12px;color:#f97316;">🕐 ${m.time_kyiv || m.time || 'TBD'}</div>
     </div>`
   ).join('');
   if (tennisData.source_info) html += `<div class="muted" style="font-size:11px;margin-top:6px;text-align:right">${tennisData.source_info}</div>`;
@@ -582,8 +581,6 @@ async function fetchTennis() {
     if (!jsonMatch) throw new Error('JSON не знайдено у відповіді');
     tennisData = JSON.parse(jsonMatch[0]);
     renderTennisDay();
-    const apiRow = document.getElementById('tennis-api-row');
-    if (apiRow) apiRow.style.display = 'none';
   } catch(e) {
     document.getElementById('tennis-content').innerHTML = `<div style="color:#ef4444;text-align:center;padding:16px;font-size:13px;">Помилка: ${e.message}</div>`;
   }

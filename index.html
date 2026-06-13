@@ -194,7 +194,7 @@
   </div>
 
   <div id="tennis-api-row" style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
-    <input type="password" id="tennis-api-key" placeholder="Anthropic API Key (sk-ant-...)"
+    <input type="password" id="tennis-api-key" placeholder="Google AI Studio API Key (AIza...)"
       style="flex:1;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f8fafc;padding:6px 12px;font-size:12px;outline:none;" />
     <button onclick="saveTennisKey()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Завантажити</button>
   </div>
@@ -205,13 +205,13 @@
   </div>
 
   <div id="tennis-content">
-    <div class="muted" style="text-align:center;padding:24px;font-size:13px;">Введіть Anthropic API ключ та натисніть «Завантажити»</div>
+    <div class="muted" style="text-align:center;padding:24px;font-size:13px;">Введіть Google AI Studio API ключ та натисніть «Завантажити»<br><span style="font-size:11px">Безкоштовно · aistudio.google.com/apikey</span></div>
   </div>
 </div>
 
 <!-- Footer -->
 <footer style="text-align:center;color:#475569;font-size:12px;margin-top:16px;">
-  Дані: Open-Meteo (погода) · Лунний календар: локальний астрономічний розрахунок · Теніс: Claude API з веб-пошуком · Автооновлення кожні 60 с
+  Дані: Open-Meteo (погода) · Лунний календар: локальний астрономічний розрахунок · Теніс: Gemini 2.0 Flash + Google Search (безкоштовно) · Автооновлення кожні 60 с
 </footer>
 
 <script>
@@ -542,16 +542,16 @@ function renderTennisDay() {
 
 function saveTennisKey() {
   const key = document.getElementById('tennis-api-key').value.trim();
-  if (key) localStorage.setItem('anthropic_key', key);
+  if (key) localStorage.setItem('gemini_key', key);
   fetchTennis();
 }
 
 async function fetchTennis() {
   if (tennisLoading) return;
   const keyInput = document.getElementById('tennis-api-key');
-  const apiKey = (keyInput && keyInput.value.trim()) || localStorage.getItem('anthropic_key') || '';
+  const apiKey = (keyInput && keyInput.value.trim()) || localStorage.getItem('gemini_key') || '';
   if (!apiKey) {
-    document.getElementById('tennis-content').innerHTML = '<div style="color:#ef4444;text-align:center;padding:16px;font-size:13px;">Введіть Anthropic API ключ</div>';
+    document.getElementById('tennis-content').innerHTML = '<div style="color:#ef4444;text-align:center;padding:16px;font-size:13px;">Введіть Google AI Studio API ключ</div>';
     return;
   }
   tennisLoading = true;
@@ -562,30 +562,21 @@ async function fetchTennis() {
   const today    = getDateStr(0);
   const tomorrow = getDateStr(1);
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-calls': 'true',
-      },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{
+        tools: [{ google_search: {} }],
+        contents: [{
           role: 'user',
-          content: `Today is ${today}, tomorrow is ${tomorrow}.\nSearch for WTA singles matches for Ukrainian top-100 players on ${today} and ${tomorrow}.\nUkrainian players: Elina Svitolina, Dayana Yastremska, Marta Kostyuk, Angelina Kalinina, Lesia Tsurenko.\nReturn ONLY valid JSON (no markdown, no explanation): { "today": [...], "tomorrow": [...], "note": "", "source_info": "" }\nEach match: date, player, wta_rank, opponent, opponent_rank, opponent_flag, result (win/loss/live/upcoming), score, round, tournament, surface, time.`
+          parts: [{ text: `Today is ${today}, tomorrow is ${tomorrow}.\nSearch for WTA singles matches for Ukrainian top-100 players on ${today} and ${tomorrow}.\nUkrainian players: Elina Svitolina, Dayana Yastremska, Marta Kostyuk, Angelina Kalinina, Lesia Tsurenko.\nReturn ONLY valid JSON (no markdown, no explanation): { "today": [...], "tomorrow": [...], "note": "", "source_info": "" }\nEach match: date, player, wta_rank, opponent, opponent_rank, opponent_flag, result (win/loss/live/upcoming), score, round, tournament, surface, time.` }]
         }]
       })
     });
     const data = await resp.json();
-    let jsonText = '';
-    for (const block of (data.content || [])) {
-      if (block.type === 'text') { jsonText = block.text; break; }
-    }
-    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+    if (data.error) throw new Error(data.error.message);
+    const text = data.candidates?.[0]?.content?.parts?.find(p => p.text)?.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('JSON не знайдено у відповіді');
     tennisData = JSON.parse(jsonMatch[0]);
     renderTennisDay();
@@ -611,7 +602,7 @@ function refreshAll() {
 }
 
 // Restore saved API key
-const _savedKey = localStorage.getItem('anthropic_key');
+const _savedKey = localStorage.getItem('gemini_key');
 if (_savedKey) {
   const _ki = document.getElementById('tennis-api-key');
   if (_ki) _ki.value = _savedKey;

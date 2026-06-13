@@ -593,7 +593,7 @@ async function fetchTennis() {
         tools: [{ google_search: {} }],
         contents: [{
           role: 'user',
-          parts: [{ text: `Today is ${today}. Search for WTA singles matches for Ukrainian top-100 players from ${today} to ${endDate} (7 days).\nUkrainian players: Elina Svitolina, Dayana Yastremska, Marta Kostyuk, Angelina Kalinina, Lesia Tsurenko.\nReturn ONLY valid JSON (no markdown, no explanation): { "matches": [...], "note": "", "source_info": "" }\nEach match object must have these exact fields: date (YYYY-MM-DD), player (string), opponent (string), opponent_flag (emoji), tournament (string), time_utc (string, scheduled start time in UTC as HH:MM, or "" if unknown). Sort matches by date.` }]
+          parts: [{ text: `Today is ${today}. Search for WTA singles matches involving these Ukrainian players from ${today} to ${endDate}:\nElina Svitolina, Dayana Yastremska, Marta Kostyuk, Angelina Kalinina, Lesia Tsurenko.\n\nSearch these sources in priority order:\n1. site:sofascore.com tennis WTA Ukrainian players ${today}\n2. site:wtatennis.com schedule\n3. site:flashscore.com tennis WTA\n4. site:tennis24.ua\n\nFor each match found return ONLY valid JSON (no markdown, no explanation): { "matches": [...], "source_info": "" }\nEach match object must have: date (YYYY-MM-DD), player (full name), opponent (full name), opponent_flag (country flag emoji), tournament (tournament name), time_utc (match start time in UTC as HH:MM, or "" if unknown). Sort by date.` }]
         }]
       })
     });

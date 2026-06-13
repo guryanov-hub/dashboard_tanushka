@@ -565,11 +565,14 @@ async function fetchTennis() {
       if (!resp.ok) { debugLines.push(`${date}: HTTP ${resp.status}`); continue; }
       const data = await resp.json();
       const events = data.events || [];
-      const pairs = events.map(ev => {
-        const comps = ev.competitions?.[0]?.competitors || [];
-        return comps.map(c => c?.athlete?.displayName || c?.team?.displayName || '?').join(' vs ');
-      });
-      debugLines.push(`${date}: ${events.length} — ${pairs.join(' | ')}`);
+      if (i === 0 && events.length > 0) {
+        const ev0 = events[0];
+        debugLines.push(`Ключі event: ${Object.keys(ev0).join(', ')}`);
+        debugLines.push(`competitions[0] keys: ${Object.keys(ev0.competitions?.[0] || {}).join(', ')}`);
+        debugLines.push(`competitors direct: ${JSON.stringify((ev0.competitors || []).map(c => c?.athlete?.displayName || c?.team?.displayName))}`);
+        debugLines.push(`competitions[0].competitors: ${JSON.stringify((ev0.competitions?.[0]?.competitors || []).map(c => c?.athlete?.displayName || c?.team?.displayName))}`);
+      }
+      debugLines.push(`${date}: ${events.length} матчів`);
       for (const ev of events) {
         const comps = ev.competitions?.[0]?.competitors || [];
         const names = comps.map(c => c?.athlete?.displayName || c?.team?.displayName || '?');

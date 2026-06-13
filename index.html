@@ -545,6 +545,15 @@ function renderTennisDay() {
   ).join('');
 }
 
+async function sofaFetch(date) {
+  const direct = `https://api.sofascore.com/api/v1/sport/tennis/scheduled-events/${date}`;
+  const proxy  = `https://api.allorigins.win/raw?url=${encodeURIComponent(direct)}`;
+  let resp = await fetch(direct).catch(() => null);
+  if (!resp || !resp.ok) resp = await fetch(proxy);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status} для ${date}`);
+  return resp.json();
+}
+
 async function fetchTennis() {
   if (tennisLoading) return;
   tennisLoading = true;
@@ -554,13 +563,14 @@ async function fetchTennis() {
     <div class="skeleton" style="height:36px;"></div>`;
 
   const allMatches = [];
+  let totalEvents = 0;
   try {
     for (let i = 0; i < 7; i++) {
       const date = getDateStr(i);
-      const resp = await fetch(`https://api.sofascore.com/api/v1/sport/tennis/scheduled-events/${date}`);
-      if (!resp.ok) continue;
-      const data = await resp.json();
-      for (const ev of (data.events || [])) {
+      const data = await sofaFetch(date);
+      const events = data.events || [];
+      totalEvents += events.length;
+      for (const ev of events) {
         const home = (ev.homeTeam?.name || '').toLowerCase();
         const away = (ev.awayTeam?.name || '').toLowerCase();
         const kw = UA_KEYWORDS.find(k => home.includes(k) || away.includes(k));
@@ -570,16 +580,20 @@ async function fetchTennis() {
         const ot = isHome ? ev.awayTeam : ev.homeTeam;
         allMatches.push({
           date,
-          player:    pt.name,
-          opponent:  ot.name,
-          flag:      countryFlag(ot.country?.alpha2),
+          player:     pt.name,
+          opponent:   ot.name,
+          flag:       countryFlag(ot.country?.alpha2),
           tournament: ev.tournament?.uniqueTournament?.name || ev.tournament?.name || '—',
-          time_utc:  tsToUtcHHMM(ev.startTimestamp),
+          time_utc:   tsToUtcHHMM(ev.startTimestamp),
         });
       }
     }
     tennisData = allMatches;
     renderTennisDay();
+    if (!allMatches.length) {
+      document.getElementById('tennis-content').innerHTML +=
+        `<div class="muted" style="font-size:11px;margin-top:8px;">Перевірено ${totalEvents} подій SofaScore — українських гравців не знайдено</div>`;
+    }
   } catch(e) {
     document.getElementById('tennis-content').innerHTML =
       `<div style="color:#ef4444;padding:16px 0;font-size:13px;">Помилка: ${e.message}</div>`;

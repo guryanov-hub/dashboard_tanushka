@@ -483,8 +483,7 @@ let selectedTennisDate = new Date().toISOString().split('T')[0];
 let tennisData = null;
 let tennisLoading = false;
 
-const UA_KEYWORDS = ['svitolina', 'yastremska', 'kostyuk', 'kalinina', 'tsurenko'];
-const UA_MONTHS   = ['січ','лют','бер','кві','тра','чер','лип','сер','вер','жов','лис','гру'];
+const UA_MONTHS = ['січ','лют','бер','кві','тра','чер','лип','сер','вер','жов','лис','гру'];
 
 function getDateStr(offset) {
   const d = new Date();
@@ -539,7 +538,7 @@ function renderTennisDay() {
   }
   container.innerHTML = matches.map(m =>
     `<div class="fade-in" style="padding:8px 0;border-bottom:1px solid #1e293b;font-size:13px;">
-      <span style="color:#94a3b8">${m.tournament} · </span>${m.player} vs ${m.flag} ${m.opponent}
+      <span style="color:#94a3b8">${m.tournament} · </span>${m.player} vs ${m.opponent}${m.flag ? ` <span class="muted">(${m.flag})</span>` : ''}
       <span style="color:#f97316;margin-left:10px;">🕐 ${utcToKyiv(m.time_utc)}</span>
     </div>`
   ).join('');
@@ -554,7 +553,6 @@ async function fetchTennis() {
     <div class="skeleton" style="height:36px;"></div>`;
 
   const allMatches = [];
-  const debugLines = [];
   try {
     for (let i = 0; i < 7; i++) {
       const date = getDateStr(i);
@@ -562,39 +560,28 @@ async function fetchTennis() {
       const resp = await fetch(
         `https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard?dates=${espnDate}`
       );
-      if (!resp.ok) { debugLines.push(`${date}: HTTP ${resp.status}`); continue; }
+      if (!resp.ok) continue;
       const data = await resp.json();
-      const events = data.events || [];
-      if (i === 0 && events.length > 0) {
-        const ev0 = events[0];
-        debugLines.push(`Ключі event: ${Object.keys(ev0).join(', ')}`);
-        debugLines.push(`competitions[0] keys: ${Object.keys(ev0.competitions?.[0] || {}).join(', ')}`);
-        debugLines.push(`competitors direct: ${JSON.stringify((ev0.competitors || []).map(c => c?.athlete?.displayName || c?.team?.displayName))}`);
-        debugLines.push(`competitions[0].competitors: ${JSON.stringify((ev0.competitions?.[0]?.competitors || []).map(c => c?.athlete?.displayName || c?.team?.displayName))}`);
-      }
-      debugLines.push(`${date}: ${events.length} матчів`);
-      for (const ev of events) {
-        const comps = ev.competitions?.[0]?.competitors || [];
-        const names = comps.map(c => c?.athlete?.displayName || c?.team?.displayName || '?');
-        const kw = UA_KEYWORDS.find(k => names.some(n => n.toLowerCase().includes(k)));
-        if (!kw) continue;
-        const uaIdx  = names.findIndex(n => n.toLowerCase().includes(kw));
-        const oppIdx = uaIdx === 0 ? 1 : 0;
-        const uaComp  = comps[uaIdx];
-        const oppComp = comps[oppIdx];
-        const uaName  = names[uaIdx];
-        const oppName = names[oppIdx] || '—';
-        const oppNat  = oppComp?.athlete?.flag?.alt || '';
-        const tournament = ev.competitions?.[0]?.notes?.[0]?.headline || ev.name || '—';
-        const time_utc   = ev.date ? ev.date.slice(11, 16) : '';
-        allMatches.push({ date, player: uaName, opponent: oppName, flag: oppNat, tournament, time_utc });
+      for (const ev of (data.events || [])) {
+        const tournamentName = ev.name || '—';
+        for (const grp of (ev.groupings || [])) {
+          for (const comp of (grp.competitions || [])) {
+            const competitors = comp.competitors || [];
+            const uaIdx = competitors.findIndex(c => c?.athlete?.flag?.alt === 'Ukraine');
+            if (uaIdx === -1) continue;
+            const oppIdx = uaIdx === 0 ? 1 : 0;
+            const uaName    = competitors[uaIdx]?.athlete?.displayName || '—';
+            const oppName   = competitors[oppIdx]?.athlete?.displayName || '—';
+            const oppCountry = competitors[oppIdx]?.athlete?.flag?.alt || '';
+            const matchDate = comp.date ? comp.date.slice(0, 10) : date;
+            const time_utc  = comp.date ? comp.date.slice(11, 16) : '';
+            allMatches.push({ date: matchDate, player: uaName, opponent: oppName, flag: oppCountry, tournament: tournamentName, time_utc });
+          }
+        }
       }
     }
     tennisData = allMatches;
     renderTennisDay();
-    if (!allMatches.length)
-      document.getElementById('tennis-content').innerHTML +=
-        `<div class="muted" style="font-size:11px;margin-top:8px;line-height:1.8">${debugLines.join('<br>')}</div>`;
   } catch(e) {
     document.getElementById('tennis-content').innerHTML =
       `<div style="color:#ef4444;padding:16px 0;font-size:13px;">Помилка: ${e.message}</div>`;

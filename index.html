@@ -178,9 +178,40 @@
   </div>
 </div>
 
+<!-- Tennis WTA -->
+<div class="card" id="tennis-card" style="margin-bottom:20px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="icon-wrap">
+        <i data-lucide="trophy" class="accent" style="width:20px;height:20px;"></i>
+      </div>
+      <div>
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Теніс WTA</div>
+        <div style="font-size:14px;font-weight:600;">Українські гравчині</div>
+      </div>
+    </div>
+    <button onclick="fetchTennis()" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">↻ Оновити</button>
+  </div>
+
+  <div id="tennis-api-row" style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
+    <input type="password" id="tennis-api-key" placeholder="Anthropic API Key (sk-ant-...)"
+      style="flex:1;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f8fafc;padding:6px 12px;font-size:12px;outline:none;" />
+    <button onclick="saveTennisKey()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Завантажити</button>
+  </div>
+
+  <div style="display:flex;gap:6px;background:#0f172a;border-radius:10px;padding:4px;margin-bottom:14px;">
+    <button class="tab-btn active" id="ttab-0" onclick="setTennisDay(0)">Сьогодні</button>
+    <button class="tab-btn" id="ttab-1" onclick="setTennisDay(1)">Завтра</button>
+  </div>
+
+  <div id="tennis-content">
+    <div class="muted" style="text-align:center;padding:24px;font-size:13px;">Введіть Anthropic API ключ та натисніть «Завантажити»</div>
+  </div>
+</div>
+
 <!-- Footer -->
 <footer style="text-align:center;color:#475569;font-size:12px;margin-top:16px;">
-  Дані: Open-Meteo (погода) · Лунний календар: локальний астрономічний розрахунок · Автооновлення кожні 60 с
+  Дані: Open-Meteo (погода) · Лунний календар: локальний астрономічний розрахунок · Теніс: Claude API з веб-пошуком · Автооновлення кожні 60 с
 </footer>
 
 <script>
@@ -449,6 +480,123 @@ function renderMoon() {
   </div>`;
 }
 
+// ── Tennis WTA ────────────────────────────────────────────────
+let tennisDay = 0;
+let tennisData = null;
+let tennisLoading = false;
+
+const RESULT_INFO = {
+  win:      { label:'Перемога',    color:'#22c55e' },
+  loss:     { label:'Поразка',     color:'#ef4444' },
+  live:     { label:'🔴 Live',     color:'#f97316' },
+  upcoming: { label:'Заплановано', color:'#94a3b8' },
+};
+const SURFACE_INFO = {
+  Hard:  { color:'#3b82f6', bg:'rgba(59,130,246,.15)' },
+  Clay:  { color:'#ea580c', bg:'rgba(234,88,12,.15)'  },
+  Grass: { color:'#16a34a', bg:'rgba(22,163,74,.15)'  },
+};
+
+function getDateStr(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().split('T')[0];
+}
+
+function setTennisDay(day) {
+  tennisDay = day;
+  document.getElementById('ttab-0').classList.toggle('active', day === 0);
+  document.getElementById('ttab-1').classList.toggle('active', day === 1);
+  if (tennisData) renderTennisDay();
+}
+
+function renderTennisDay() {
+  const matches = (tennisDay === 0 ? tennisData.today : tennisData.tomorrow) || [];
+  const container = document.getElementById('tennis-content');
+  if (!matches.length) {
+    container.innerHTML = '<div class="muted" style="text-align:center;padding:20px;font-size:13px;">Матчів не знайдено</div>';
+    if (tennisData.note) container.innerHTML += `<div class="muted" style="text-align:center;font-size:12px;padding-bottom:10px;">${tennisData.note}</div>`;
+    return;
+  }
+  let html = matches.map(m => {
+    const res  = RESULT_INFO[m.result] || RESULT_INFO.upcoming;
+    const surf = SURFACE_INFO[m.surface] || { color:'#94a3b8', bg:'rgba(148,163,184,.1)' };
+    return `<div class="inset fade-in" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+        <div style="font-weight:600;font-size:13px;">${m.player} <span class="muted" style="font-size:11px;font-weight:400">#${m.wta_rank}</span></div>
+        <span style="font-size:11px;font-weight:600;color:${res.color}">${res.label}</span>
+      </div>
+      <div style="font-size:12px;color:#cbd5e1;margin-bottom:6px;">vs ${m.opponent_flag||''} ${m.opponent} <span class="muted">#${m.opponent_rank}</span></div>
+      ${m.score ? `<div style="font-size:13px;font-weight:600;margin-bottom:6px;">${m.score}</div>` : ''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span style="background:${surf.bg};color:${surf.color};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">${m.surface}</span>
+        <span class="muted" style="font-size:11px">${m.tournament}</span>
+        ${m.round ? `<span class="muted" style="font-size:11px">· ${m.round}</span>` : ''}
+        ${m.time  ? `<span class="muted" style="font-size:11px">· ${m.time}</span>`  : ''}
+      </div>
+    </div>`;
+  }).join('');
+  if (tennisData.source_info) html += `<div class="muted" style="font-size:11px;margin-top:6px;text-align:right">${tennisData.source_info}</div>`;
+  container.innerHTML = html;
+}
+
+function saveTennisKey() {
+  const key = document.getElementById('tennis-api-key').value.trim();
+  if (key) localStorage.setItem('anthropic_key', key);
+  fetchTennis();
+}
+
+async function fetchTennis() {
+  if (tennisLoading) return;
+  const keyInput = document.getElementById('tennis-api-key');
+  const apiKey = (keyInput && keyInput.value.trim()) || localStorage.getItem('anthropic_key') || '';
+  if (!apiKey) {
+    document.getElementById('tennis-content').innerHTML = '<div style="color:#ef4444;text-align:center;padding:16px;font-size:13px;">Введіть Anthropic API ключ</div>';
+    return;
+  }
+  tennisLoading = true;
+  document.getElementById('tennis-content').innerHTML = `
+    <div class="skeleton" style="height:80px;margin-bottom:10px;"></div>
+    <div class="skeleton" style="height:80px;margin-bottom:10px;"></div>
+    <div class="skeleton" style="height:80px;"></div>`;
+  const today    = getDateStr(0);
+  const tomorrow = getDateStr(1);
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-calls': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2048,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{
+          role: 'user',
+          content: `Today is ${today}, tomorrow is ${tomorrow}.\nSearch for WTA singles matches for Ukrainian top-100 players on ${today} and ${tomorrow}.\nUkrainian players: Elina Svitolina, Dayana Yastremska, Marta Kostyuk, Angelina Kalinina, Lesia Tsurenko.\nReturn ONLY valid JSON (no markdown, no explanation): { "today": [...], "tomorrow": [...], "note": "", "source_info": "" }\nEach match: date, player, wta_rank, opponent, opponent_rank, opponent_flag, result (win/loss/live/upcoming), score, round, tournament, surface, time.`
+        }]
+      })
+    });
+    const data = await resp.json();
+    let jsonText = '';
+    for (const block of (data.content || [])) {
+      if (block.type === 'text') { jsonText = block.text; break; }
+    }
+    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSON не знайдено у відповіді');
+    tennisData = JSON.parse(jsonMatch[0]);
+    renderTennisDay();
+    const apiRow = document.getElementById('tennis-api-row');
+    if (apiRow) apiRow.style.display = 'none';
+  } catch(e) {
+    document.getElementById('tennis-content').innerHTML = `<div style="color:#ef4444;text-align:center;padding:16px;font-size:13px;">Помилка: ${e.message}</div>`;
+  }
+  tennisLoading = false;
+}
+
 // ── Refresh ───────────────────────────────────────────────────
 function updateTime() {
   document.getElementById('last-updated').textContent =
@@ -459,6 +607,14 @@ function refreshAll() {
   updateTime();
   fetchWeather();
   renderMoon();
+  fetchTennis();
+}
+
+// Restore saved API key
+const _savedKey = localStorage.getItem('anthropic_key');
+if (_savedKey) {
+  const _ki = document.getElementById('tennis-api-key');
+  if (_ki) _ki.value = _savedKey;
 }
 
 refreshAll();

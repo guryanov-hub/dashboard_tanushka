@@ -1,6 +1,6 @@
 # Dashboard Tanya — документація
 
-Файл: `dashboard.html`
+Файл: `index.html`
 Мова інтерфейсу: українська
 Останнє оновлення: червень 2025
 
@@ -409,18 +409,11 @@ tennisLoading = false;
 
 ---
 
-## Що було прибрано в процесі
 
-- **Hacker News** — прибрано на прохання (fetchNews, #news-card)
-- **USD/EUR курс** — прибрано на прохання (fetchCurrency, Chart.js, #currency-card)
-- **FarmSense API** — замінено на локальний розрахунок (CORS-проблеми)
-- **Берлін** → **Київ** у погоді (координати і timezone)
-
----
 
 ## Як відтворити з нуля
 
-1. Один файл `dashboard.html`, відкривається напряму в браузері
+1. Один файл `index.html`, відкривається напряму в браузері
 2. Інтернет потрібен для: CDN (Tailwind, Lucide, Inter) + Open-Meteo + Claude API
 3. Лунний календар працює повністю офлайн після завантаження CDN
 4. Щоб змінити місто погоди — замінити `latitude`, `longitude`, `timezone` в `fetchWeather()`

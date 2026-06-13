@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+  body { background: #0f172a; color: #f8fafc; margin: 0; }
+
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; }
+  .inset { background: #0f172a; border-radius: 10px; padding: 12px; }
+
+  .skeleton {
+    background: linear-gradient(90deg, #1e293b 25%, #2d3f55 50%, #1e293b 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+    height: 14px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .fade-in { animation: fadeIn 0.4s ease forwards; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  .accent { color: #f97316; }
+  .muted  { color: #94a3b8; }
+
+  .icon-wrap {
+    width:40px; height:40px; border-radius:10px;
+    background:rgba(249,115,22,0.15);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+
+  /* Date picker */
+  #moon-date {
+    background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+    color: #f8fafc; padding: 4px 10px; font-size: 13px; cursor: pointer;
+    outline: none;
+  }
+  #moon-date:focus { border-color: #f97316; }
+  #moon-date::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+
+  /* Tabs */
+  .tab-btn {
+    flex:1; padding: 8px 12px; font-size: 12px; font-weight: 600;
+    border-radius: 8px; border: none; cursor: pointer; transition: all .2s;
+    background: transparent; color: #64748b;
+  }
+  .tab-btn.active { background: #f97316; color: #fff; }
+
+  /* Rate pill */
+  .pill {
+    padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Section divider */
+  .section-title {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .06em; margin-bottom: 6px;
+  }
+
+  /* Warning banner */
+  .moon-warn {
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 10px;
+    font-size: 12px; line-height: 1.5;
+  }
+
+  @media(max-width:900px) {
+    .main-grid { grid-template-columns: 1fr !important; }
+  }
+</style>
+</head>
+<body style="min-height:100vh;padding:24px 32px;">
+
+<!-- Header -->
+<header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+  <div>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 2px;">Live Dashboard</h1>
+    <p class="muted" style="font-size:13px;margin:0;">Київ · Лунний календар</p>
+  </div>
+  <div style="text-align:right;">
+    <div class="muted" style="font-size:11px;margin-bottom:2px;">Оновлено</div>
+    <div id="last-updated" class="accent" style="font-family:monospace;font-size:13px;font-weight:600;">--:--:--</div>
+  </div>
+</header>
+
+<!-- Top row: weather + moon header -->
+<div class="main-grid" style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:20px;">
+
+  <!-- Weather -->
+  <div class="card" id="weather-card">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div class="icon-wrap">
+        <i data-lucide="cloud-sun" class="accent" style="width:20px;height:20px;"></i>
+      </div>
+      <div>
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Погода</div>
+        <div style="font-size:14px;font-weight:600;">Київ, UA</div>
+      </div>
+    </div>
+    <div id="weather-content">
+      <div class="skeleton" style="height:56px;margin-bottom:14px;"></div>
+      <div class="skeleton" style="width:60%;margin-bottom:10px;"></div>
+      <div class="skeleton" style="width:80%;margin-bottom:10px;"></div>
+      <div class="skeleton" style="width:50%;"></div>
+    </div>
+  </div>
+
+  <!-- Moon unified card -->
+  <div class="card" id="moon-card">
+
+    <!-- Moon card header: date picker + phase summary -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="icon-wrap">
+          <i data-lucide="moon" class="accent" style="width:20px;height:20px;"></i>
+        </div>
+        <div>
+          <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Лунний календар</div>
+          <div id="moon-phase-label" style="font-size:14px;font-weight:600;">—</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="muted" style="font-size:12px;">Дата:</span>
+        <input type="date" id="moon-date" />
+        <button onclick="goToday()" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;">Сьогодні</button>
+      </div>
+    </div>
+
+    <!-- Phase strip -->
+    <div id="moon-phase-strip" style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:#0f172a;border-radius:10px;margin-bottom:16px;flex-wrap:wrap;">
+      <div style="font-size:44px;line-height:1" id="moon-emoji">—</div>
+      <div>
+        <div style="font-size:36px;font-weight:700;line-height:1;" class="accent" id="moon-day-num">—</div>
+        <div class="muted" style="font-size:12px;margin-top:2px;" id="moon-day-sub">лунний день</div>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div id="moon-sign-badge" style="font-size:13px;font-weight:600;margin-bottom:4px;">—</div>
+        <div id="moon-illum" class="muted" style="font-size:12px;">—</div>
+        <div id="moon-wax" style="font-size:11px;margin-top:2px;">—</div>
+      </div>
+    </div>
+
+    <!-- Warning (new/full moon) -->
+    <div id="moon-warning" style="display:none;" class="moon-warn"></div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:6px;background:#0f172a;border-radius:10px;padding:4px;margin-bottom:14px;">
+      <button class="tab-btn active" id="tab-beauty" onclick="switchTab('beauty')">✂️ Краса та здоров'я</button>
+      <button class="tab-btn" id="tab-garden" onclick="switchTab('garden')">🌿 Рослини та город</button>
+    </div>
+
+    <!-- Tab: Beauty -->
+    <div id="panel-beauty">
+      <div id="beauty-content">
+        <div class="skeleton" style="margin-bottom:10px;"></div>
+        <div class="skeleton" style="width:70%;margin-bottom:10px;"></div>
+        <div class="skeleton" style="margin-bottom:10px;"></div>
+        <div class="skeleton" style="width:80%;"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Garden -->
+    <div id="panel-garden" style="display:none;">
+      <div id="garden-content">
+        <div class="skeleton" style="margin-bottom:10px;"></div>
+        <div class="skeleton" style="width:70%;margin-bottom:10px;"></div>
+        <div class="skeleton" style="margin-bottom:10px;"></div>
+        <div class="skeleton" style="width:80%;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer -->
+<footer style="text-align:center;color:#475569;font-size:12px;margin-top:16px;">
+  Дані: Open-Meteo (погода) · Лунний календар: локальний астрономічний розрахунок · Автооновлення кожні 60 с
+</footer>
+
+<script>
+lucide.createIcons();
+
+// ── State ─────────────────────────────────────────────────────
+let selectedDate = new Date();
+selectedDate.setHours(12, 0, 0, 0);
+let activeTab = 'beauty';
+
+const dateInput = document.getElementById('moon-date');
+dateInput.value = toDateVal(selectedDate);
+dateInput.addEventListener('change', () => {
+  if (!dateInput.value) return;
+  selectedDate = new Date(dateInput.value + 'T12:00:00');
+  renderMoon();
+});
+
+function goToday() {
+  selectedDate = new Date();
+  selectedDate.setHours(12, 0, 0, 0);
+  dateInput.value = toDateVal(selectedDate);
+  renderMoon();
+}
+
+function toDateVal(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tab-beauty').classList.toggle('active', tab === 'beauty');
+  document.getElementById('tab-garden').classList.toggle('active', tab === 'garden');
+  document.getElementById('panel-beauty').style.display = tab === 'beauty' ? '' : 'none';
+  document.getElementById('panel-garden').style.display = tab === 'garden' ? '' : 'none';
+}
+
+// ── Weather ───────────────────────────────────────────────────
+const WEATHER_CODES = {
+  0:'Ясно', 1:'Переважно ясно', 2:'Мінлива хмарність', 3:'Хмарно',
+  45:'Туман', 48:'Крижаний туман',
+  51:'Мряка', 53:'Мряка', 55:'Густа мряка',
+  61:'Дощ слабкий', 63:'Дощ', 65:'Сильний дощ',
+  71:'Сніг слабкий', 73:'Сніг', 75:'Сильний сніг',
+  80:'Злива слабка', 81:'Злива', 82:'Сильна злива',
+  95:'Гроза', 96:'Гроза з градом', 99:'Гроза з сильним градом',
+};
+function wIcon(c) {
+  if(c===0) return '☀️'; if(c<=2) return '🌤️'; if(c<=3) return '☁️';
+  if(c<=48) return '🌫️'; if(c<=67) return '🌧️'; if(c<=77) return '❄️';
+  if(c<=82) return '⛈️'; return '🌩️';
+}
+
+async function fetchWeather() {
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=50.45&longitude=30.52&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&wind_speed_unit=kmh&timezone=Europe/Kyiv');
+    const d = await r.json(); const c = d.current;
+    document.getElementById('weather-content').innerHTML = `
+      <div class="fade-in">
+        <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:14px;">
+          <span style="font-size:52px;line-height:1">${wIcon(c.weather_code)}</span>
+          <div>
+            <div style="font-size:48px;font-weight:700;line-height:1" class="accent">${Math.round(c.temperature_2m)}°</div>
+            <div class="muted" style="font-size:12px">Цельсій</div>
+          </div>
+        </div>
+        <div style="font-size:14px;font-weight:500;margin-bottom:14px">${WEATHER_CODES[c.weather_code]||'Невідомо'}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="inset">
+            <div class="muted" style="font-size:11px;margin-bottom:3px;">Вологість</div>
+            <div style="font-weight:600">${c.relative_humidity_2m}<span class="muted" style="font-size:11px">%</span></div>
+          </div>
+          <div class="inset">
+            <div class="muted" style="font-size:11px;margin-bottom:3px;">Вітер</div>
+            <div style="font-weight:600">${Math.round(c.wind_speed_10m)}<span class="muted" style="font-size:11px"> км/год</span></div>
+          </div>
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('weather-content').innerHTML = '<div class="muted" style="text-align:center;padding:20px;opacity:.6">— немає даних —</div>';
+  }
+}
+
+// ── Moon calculation ──────────────────────────────────────────
+function calcMoonData(date) {
+  const known = new Date('2000-01-06T18:14:00Z');
+  const synodic = 29.53058867;
+  const elapsed = (date - known) / 864e5;
+  const cycles = elapsed / synodic;
+  const fraction = ((cycles % 1) + 1) % 1;
+  const day = Math.floor(fraction * synodic) + 1;
+  const illum = Math.round((0.5 - 0.5 * Math.cos(fraction * 2 * Math.PI)) * 100);
+  const waxing = fraction < 0.5;
+
+  const J2000 = 2451545.0;
+  const jd = elapsed + J2000;
+  let L = 218.316 + 13.176396 * (jd - J2000);
+  let M = 134.963 + 13.064993 * (jd - J2000);
+  M = ((M % 360) + 360) % 360 * Math.PI / 180;
+  const lon = L + 6.289 * Math.sin(M);
+  const signIdx = Math.floor(((lon % 360) + 360) % 360 / 30);
+
+  return { day, illum, waxing, signIdx, fraction };
+}
+
+const SIGNS = [
+  { name:'Овен',     uk:'Овні',       emoji:'♈', type:'fruit'  },
+  { name:'Телець',   uk:'Тельці',     emoji:'♉', type:'root'   },
+  { name:'Близнюки', uk:'Близнюках',  emoji:'♊', type:'flower' },
+  { name:'Рак',      uk:'Раку',       emoji:'♋', type:'leaf'   },
+  { name:'Лев',      uk:'Леві',       emoji:'♌', type:'fruit'  },
+  { name:'Діва',     uk:'Діві',       emoji:'♍', type:'root'   },
+  { name:'Терези',   uk:'Терезах',    emoji:'♎', type:'flower' },
+  { name:'Скорпіон', uk:'Скорпіоні',  emoji:'♏', type:'leaf'   },
+  { name:'Стрілець', uk:'Стрільці',   emoji:'♐', type:'fruit'  },
+  { name:'Козеріг',  uk:'Козерозі',   emoji:'♑', type:'root'   },
+  { name:'Водолій',  uk:'Водолії',    emoji:'♒', type:'flower' },
+  { name:'Риби',     uk:'Рибах',      emoji:'♓', type:'leaf'   },
+];
+
+function phaseEmoji(f) {
+  if(f<0.03||f>0.97) return '🌑'; if(f<0.22) return '🌒';
+  if(f<0.28) return '🌓'; if(f<0.47) return '🌔'; if(f<0.53) return '🌕';
+  if(f<0.72) return '🌖'; if(f<0.78) return '🌗'; return '🌘';
+}
+function phaseName(f) {
+  if(f<0.03||f>0.97) return 'Новолуння'; if(f<0.22) return 'Зростаючий серп';
+  if(f<0.28) return 'Перша чверть'; if(f<0.47) return 'Зростаючий горбатий';
+  if(f<0.53) return 'Повний місяць'; if(f<0.72) return 'Спадаючий горбатий';
+  if(f<0.78) return 'Остання чверть'; return 'Спадаючий серп';
+}
+
+function pill(rate) {
+  const map = {
+    great:{ bg:'rgba(34,197,94,.15)',  color:'#22c55e', label:'★ Відмінно' },
+    good: { bg:'rgba(249,115,22,.15)', color:'#f97316', label:'✓ Добре' },
+    bad:  { bg:'rgba(245,158,11,.15)', color:'#f59e0b', label:'~ Небажано' },
+    avoid:{ bg:'rgba(239,68,68,.15)',  color:'#ef4444', label:'✕ Уникати' },
+  };
+  const r = map[rate]||map.good;
+  return `<span class="pill" style="background:${r.bg};color:${r.color}">${r.label}</span>`;
+}
+
+// ── Beauty & Health data ──────────────────────────────────────
+const HAIR = {
+  0: {rate:'good',  note:'Швидкий ріст, хороша густота'},
+  1: {rate:'great', note:'Найкращий день — волосся буде густим і міцним'},
+  2: {rate:'great', note:'Сприятливо, ріст швидкий та здоровий'},
+  3: {rate:'avoid', note:'Уникайте — волосся може стати ламким'},
+  4: {rate:'great', note:'Відмінно — волосся буде пишним та блискучим'},
+  5: {rate:'bad',   note:'Небажано — ріст повільний, волосся тьмяніє'},
+  6: {rate:'great', note:'Ідеально для стрижки та укладки'},
+  7: {rate:'avoid', note:'Уникайте — посилене випадання волосся'},
+  8: {rate:'good',  note:'Добре для підрівнювання кінчиків'},
+  9: {rate:'bad',   note:'Небажано — ріст уповільнений'},
+  10:{rate:'good',  note:'Нейтрально, підходить для нових зачісок'},
+  11:{rate:'avoid', note:'Уникайте — волосся стає слабким'},
+};
+
+const DENTAL = {
+  0: {rate:'good',  note:'Прийнятно, але уважно з болем'},
+  1: {rate:'great', note:'Відмінно для пломбування і чищення'},
+  2: {rate:'good',  note:'Добре для консультацій і планових процедур'},
+  3: {rate:'bad',   note:'Підвищена чутливість ясен, краще відкласти'},
+  4: {rate:'great', note:'Найкращий день, знеболення діє добре'},
+  5: {rate:'good',  note:'Добре для гігієнічного чищення'},
+  6: {rate:'great', note:'Відмінно, мінімальний ризик ускладнень'},
+  7: {rate:'avoid', note:'Ризик запалення вищий, краще відкласти'},
+  8: {rate:'good',  note:'Прийнятно для планових процедур'},
+  9: {rate:'bad',   note:'Загоєння повільніше, небажано'},
+  10:{rate:'good',  note:'Нейтрально, підходить для консультацій'},
+  11:{rate:'avoid', note:'Підвищена кровоточивість, уникайте екстракцій'},
+};
+
+// ── Garden data ───────────────────────────────────────────────
+const TYPE_INFO = {
+  leaf:  { label:'🌿 Листовий день',  color:'#22c55e', bg:'rgba(34,197,94,.12)'   },
+  flower:{ label:'🌸 Квітковий день', color:'#e879f9', bg:'rgba(232,121,249,.12)' },
+  fruit: { label:'🍅 Плодовий день',  color:'#f97316', bg:'rgba(249,115,22,.12)'  },
+  root:  { label:'🥕 Кореневий день', color:'#f59e0b', bg:'rgba(245,158,11,.12)'  },
+};
+const GARDEN_ACTS = {
+  leaf:  { good:['💧 Полив — найкращий час','🥬 Посів листової зелені, салатів','🌿 Збір трав та зелені','🪴 Пересадка листових рослин'], bad:['✂️ Стрижка газону','🌱 Посів коренеплодів'] },
+  flower:{ good:['🌺 Посів і пересадка квітів','✂️ Обрізка для цвітіння','💐 Збір квітів','🌸 Догляд за декоративними рослинами'], bad:['💧 Рясний полив','🥕 Посів коренеплодів'] },
+  fruit: { good:['🍅 Збір плодів та насіння','🌱 Посів плодових культур','🫙 Консервація та заготівлі','🌿 Підживлення добривами'], bad:['✂️ Обрізка дерев','💧 Надмірний полив'] },
+  root:  { good:['🥕 Посів та збір коренеплодів','🧅 Посадка цибулі, часнику','🌱 Розпушування ґрунту','🪴 Поділ і пересадка коренів'], bad:['🌸 Посів квітів','💧 Надмірний полив'] },
+};
+
+// ── Render moon ───────────────────────────────────────────────
+function renderMoon() {
+  const { day, illum, waxing, signIdx, fraction } = calcMoonData(selectedDate);
+  const sign   = SIGNS[signIdx];
+  const phase  = phaseName(fraction);
+  const pEmoji = phaseEmoji(fraction);
+
+  // Phase strip
+  document.getElementById('moon-emoji').textContent = pEmoji;
+  document.getElementById('moon-day-num').textContent = day;
+  document.getElementById('moon-day-sub').textContent = `лунний день · ${phase}`;
+  document.getElementById('moon-phase-label').textContent = `${pEmoji} ${phase}`;
+  document.getElementById('moon-sign-badge').innerHTML = `${sign.emoji} Місяць у ${sign.uk}`;
+  document.getElementById('moon-illum').textContent = `Освітленість ${illum}%`;
+  document.getElementById('moon-wax').innerHTML = waxing
+    ? '<span style="color:#22c55e">↑ Зростаючий місяць</span>'
+    : '<span style="color:#94a3b8">↓ Спадаючий місяць</span>';
+
+  // Warning
+  const warnEl = document.getElementById('moon-warning');
+  const isNew  = fraction < 0.04 || fraction > 0.96;
+  const isFull = fraction > 0.46 && fraction < 0.54;
+  if (isNew) {
+    warnEl.style.display = '';
+    warnEl.style.background = 'rgba(239,68,68,.1)';
+    warnEl.style.border = '1px solid rgba(239,68,68,.3)';
+    warnEl.style.color = '#fca5a5';
+    warnEl.textContent = '🌑 Новолуння — уникайте стрижки та стоматологічних процедур. Повільне загоєння, низька енергія.';
+  } else if (isFull) {
+    warnEl.style.display = '';
+    warnEl.style.background = 'rgba(245,158,11,.1)';
+    warnEl.style.border = '1px solid rgba(245,158,11,.3)';
+    warnEl.style.color = '#fcd34d';
+    warnEl.textContent = '🌕 Повнолуння — підвищена кровоточивість. Для стоматології обирайте інший день.';
+  } else {
+    warnEl.style.display = 'none';
+  }
+
+  // Beauty tab
+  const hair   = HAIR[signIdx];
+  const dental = DENTAL[signIdx];
+  document.getElementById('beauty-content').innerHTML = `<div class="fade-in">
+    <div class="inset" style="margin-bottom:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:13px;font-weight:600;">✂️ Стрижка волосся</div>${pill(hair.rate)}
+      </div>
+      <div class="muted" style="font-size:12px;line-height:1.5">${hair.note}</div>
+      ${waxing ? '<div style="font-size:11px;color:#22c55e;margin-top:4px">↑ Зростаючий місяць — ріст буде активнішим</div>' : '<div style="font-size:11px;color:#94a3b8;margin-top:4px">↓ Спадаючий місяць — ріст повільніший</div>'}
+    </div>
+    <div class="inset">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:13px;font-weight:600;">🦷 Лікування зубів</div>${pill(dental.rate)}
+      </div>
+      <div class="muted" style="font-size:12px;line-height:1.5">${dental.note}</div>
+    </div>
+  </div>`;
+
+  // Garden tab
+  const gtype = TYPE_INFO[sign.type];
+  const gacts = GARDEN_ACTS[sign.type];
+  const phaseTip = waxing
+    ? '🌱 Зростаючий місяць — сприятливо для посіву та посадки наземних культур.'
+    : '✂️ Спадаючий місяць — ідеально для обрізки, збору врожаю та кореневих робіт.';
+  document.getElementById('garden-content').innerHTML = `<div class="fade-in">
+    <div style="background:${gtype.bg};border:1px solid ${gtype.color}44;border-radius:10px;padding:10px 14px;margin-bottom:10px;">
+      <div style="color:${gtype.color};font-weight:600;font-size:13px;">${gtype.label}</div>
+      <div class="muted" style="font-size:11px;margin-top:2px">Місяць у ${sign.uk} ${sign.emoji}</div>
+    </div>
+    <div class="inset" style="margin-bottom:8px;">
+      <div class="section-title" style="color:#22c55e;">✅ Сприятливо</div>
+      ${gacts.good.map(a=>`<div style="font-size:12px;padding:2px 0;color:#e2e8f0">${a}</div>`).join('')}
+    </div>
+    <div class="inset" style="margin-bottom:8px;">
+      <div class="section-title" style="color:#ef4444;">⛔ Краще уникати</div>
+      ${gacts.bad.map(a=>`<div style="font-size:12px;padding:2px 0;color:#94a3b8">${a}</div>`).join('')}
+    </div>
+    <div style="background:#0f172a;border-left:3px solid #f97316;border-radius:0 8px 8px 0;padding:8px 12px;font-size:12px;color:#94a3b8;line-height:1.5">${phaseTip}</div>
+  </div>`;
+}
+
+// ── Refresh ───────────────────────────────────────────────────
+function updateTime() {
+  document.getElementById('last-updated').textContent =
+    new Date().toLocaleTimeString('uk-UA', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function refreshAll() {
+  updateTime();
+  fetchWeather();
+  renderMoon();
+}
+
+refreshAll();
+setInterval(() => { updateTime(); fetchWeather(); }, 60000);
+</script>
+</body>
+</html>

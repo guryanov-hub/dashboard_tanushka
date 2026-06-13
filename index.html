@@ -199,10 +199,7 @@
     <button onclick="saveTennisKey()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Завантажити</button>
   </div>
 
-  <div style="display:flex;gap:6px;background:#0f172a;border-radius:10px;padding:4px;margin-bottom:14px;">
-    <button class="tab-btn active" id="ttab-0" onclick="setTennisDay(0)">Сьогодні</button>
-    <button class="tab-btn" id="ttab-1" onclick="setTennisDay(1)">Завтра</button>
-  </div>
+  <div id="tennis-tabs" style="display:flex;gap:6px;background:#0f172a;border-radius:10px;padding:4px;margin-bottom:14px;overflow-x:auto;"></div>
 
   <div id="tennis-content">
     <div class="muted" style="text-align:center;padding:24px;font-size:13px;">Введіть Google AI Studio API ключ та натисніть «Завантажити»<br><span style="font-size:11px">Безкоштовно · aistudio.google.com/apikey</span></div>
@@ -481,7 +478,7 @@ function renderMoon() {
 }
 
 // ── Tennis WTA ────────────────────────────────────────────────
-let tennisDay = 0;
+let selectedTennisDate = new Date().toISOString().split('T')[0];
 let tennisData = null;
 let tennisLoading = false;
 
@@ -503,28 +500,44 @@ function getDateStr(offset) {
   return d.toISOString().split('T')[0];
 }
 
-function setTennisDay(day) {
-  tennisDay = day;
-  document.getElementById('ttab-0').classList.toggle('active', day === 0);
-  document.getElementById('ttab-1').classList.toggle('active', day === 1);
+const UA_MONTHS = ['січ','лют','бер','кві','тра','чер','лип','сер','вер','жов','лис','гру'];
+
+function dayLabel(iso) {
+  if (iso === getDateStr(0)) return 'Сьогодні';
+  const d = new Date(iso + 'T12:00:00');
+  return `${d.getDate()} ${UA_MONTHS[d.getMonth()]}`;
+}
+
+function buildTennisTabs() {
+  const today = getDateStr(0);
+  document.getElementById('tennis-tabs').innerHTML =
+    Array.from({length: 7}, (_, i) => getDateStr(i)).map(iso =>
+      `<button class="tab-btn${iso === selectedTennisDate ? ' active' : ''}"
+        onclick="setTennisDate('${iso}')" style="white-space:nowrap">${dayLabel(iso)}</button>`
+    ).join('');
+}
+
+function setTennisDate(iso) {
+  selectedTennisDate = iso;
+  buildTennisTabs();
   if (tennisData) renderTennisDay();
 }
 
 function renderTennisDay() {
-  const matches = (tennisDay === 0 ? tennisData.today : tennisData.tomorrow) || [];
+  const matches = (tennisData.matches || []).filter(m => m.date === selectedTennisDate);
   const container = document.getElementById('tennis-content');
   if (!matches.length) {
     container.innerHTML = '<div class="muted" style="text-align:center;padding:20px;font-size:13px;">Матчів не знайдено</div>';
     if (tennisData.note) container.innerHTML += `<div class="muted" style="text-align:center;font-size:12px;padding-bottom:10px;">${tennisData.note}</div>`;
     return;
   }
-  let html = matches.map(m => {
-    return `<div class="inset fade-in" style="margin-bottom:10px;">
+  let html = matches.map(m =>
+    `<div class="inset fade-in" style="margin-bottom:10px;">
       <div class="muted" style="font-size:11px;margin-bottom:4px;">${m.tournament}</div>
       <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${m.player} vs ${m.opponent_flag||''} ${m.opponent}</div>
       <div style="font-size:12px;color:#f97316;">🕐 ${m.time || '—'} (Київ)</div>
-    </div>`;
-  }).join('');
+    </div>`
+  ).join('');
   if (tennisData.source_info) html += `<div class="muted" style="font-size:11px;margin-top:6px;text-align:right">${tennisData.source_info}</div>`;
   container.innerHTML = html;
 }
@@ -548,8 +561,8 @@ async function fetchTennis() {
     <div class="skeleton" style="height:80px;margin-bottom:10px;"></div>
     <div class="skeleton" style="height:80px;margin-bottom:10px;"></div>
     <div class="skeleton" style="height:80px;"></div>`;
-  const today    = getDateStr(0);
-  const tomorrow = getDateStr(1);
+  const today = getDateStr(0);
+  const endDate = getDateStr(6);
   try {
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
@@ -558,7 +571,7 @@ async function fetchTennis() {
         tools: [{ google_search: {} }],
         contents: [{
           role: 'user',
-          parts: [{ text: `Today is ${today}, tomorrow is ${tomorrow}.\nSearch for WTA singles matches for Ukrainian top-100 players on ${today} and ${tomorrow}.\nUkrainian players: Elina Svitolina, Dayana Yastremska, Marta Kostyuk, Angelina Kalinina, Lesia Tsurenko.\nReturn ONLY valid JSON (no markdown, no explanation): { "today": [...], "tomorrow": [...], "note": "", "source_info": "" }\nEach match: player, opponent, opponent_flag, tournament, time (Kyiv time UTC+3, format HH:MM, empty string if unknown).` }]
+          parts: [{ text: `Today is ${today}. Search for WTA singles matches for Ukrainian top-100 players from ${today} to ${endDate} (7 days).\nUkrainian players: Elina Svitolina, Dayana Yastremska, Marta Kostyuk, Angelina Kalinina, Lesia Tsurenko.\nReturn ONLY valid JSON (no markdown, no explanation): { "matches": [...], "note": "", "source_info": "" }\nEach match: date (YYYY-MM-DD), player, opponent, opponent_flag, tournament, time (Kyiv UTC+3, format HH:MM, empty string if unknown). Sort by date.` }]
         }]
       })
     });
@@ -589,6 +602,8 @@ function refreshAll() {
   renderMoon();
   fetchTennis();
 }
+
+buildTennisTabs();
 
 // Restore saved API key
 const _savedKey = localStorage.getItem('gemini_key');

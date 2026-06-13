@@ -553,6 +553,7 @@ async function fetchTennis() {
     <div class="skeleton" style="height:36px;"></div>`;
 
   const allMatches = [];
+  const seenIds = new Set();
   try {
     for (let i = 0; i < 7; i++) {
       const date = getDateStr(i);
@@ -566,15 +567,17 @@ async function fetchTennis() {
         const tournamentName = ev.name || '—';
         for (const grp of (ev.groupings || [])) {
           for (const comp of (grp.competitions || [])) {
+            if (seenIds.has(comp.id)) continue;
             const competitors = comp.competitors || [];
             const uaIdx = competitors.findIndex(c => c?.athlete?.flag?.alt === 'Ukraine');
             if (uaIdx === -1) continue;
+            seenIds.add(comp.id);
             const oppIdx = uaIdx === 0 ? 1 : 0;
-            const uaName    = competitors[uaIdx]?.athlete?.displayName || '—';
-            const oppName   = competitors[oppIdx]?.athlete?.displayName || '—';
+            const uaName     = competitors[uaIdx]?.athlete?.displayName || '—';
+            const oppName    = competitors[oppIdx]?.athlete?.displayName || '—';
             const oppCountry = competitors[oppIdx]?.athlete?.flag?.alt || '';
-            const matchDate = comp.date ? comp.date.slice(0, 10) : date;
-            const time_utc  = comp.date ? comp.date.slice(11, 16) : '';
+            const matchDate  = comp.date ? comp.date.slice(0, 10) : date;
+            const time_utc   = comp.date ? comp.date.slice(11, 16) : '';
             allMatches.push({ date: matchDate, player: uaName, opponent: oppName, flag: oppCountry, tournament: tournamentName, time_utc });
           }
         }

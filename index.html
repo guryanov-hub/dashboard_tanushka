@@ -81,7 +81,7 @@
 <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
   <div>
     <h1 style="font-size:22px;font-weight:700;margin:0 0 2px;">Live Dashboard</h1>
-    <p class="muted" style="font-size:13px;margin:0;">Київ · Лунний календар</p>
+    <p class="muted" style="font-size:13px;margin:0;">Київ</p>
   </div>
   <div style="text-align:right;">
     <div class="muted" style="font-size:11px;margin-bottom:2px;">Оновлено</div>
@@ -125,9 +125,10 @@
           <div id="moon-phase-label" style="font-size:14px;font-weight:600;">—</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span class="muted" style="font-size:12px;">Дата:</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button onclick="shiftDay(-1)" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:4px 8px;font-size:13px;font-weight:700;cursor:pointer;">‹</button>
         <input type="date" id="moon-date" />
+        <button onclick="shiftDay(1)" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:4px 8px;font-size:13px;font-weight:700;cursor:pointer;">›</button>
         <button onclick="goToday()" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;">Сьогодні</button>
       </div>
     </div>
@@ -229,6 +230,12 @@ dateInput.addEventListener('change', () => {
 function goToday() {
   selectedDate = new Date();
   selectedDate.setHours(12, 0, 0, 0);
+  dateInput.value = toDateVal(selectedDate);
+  renderMoon();
+}
+
+function shiftDay(delta) {
+  selectedDate.setDate(selectedDate.getDate() + delta);
   dateInput.value = toDateVal(selectedDate);
   renderMoon();
 }

@@ -539,7 +539,7 @@ function renderTennisDay() {
   container.innerHTML = matches.map(m =>
     `<div class="fade-in" style="padding:8px 0;border-bottom:1px solid #1e293b;font-size:13px;">
       <span style="color:#94a3b8">${m.tournament} · </span>${m.player} vs ${m.opponent}${m.flag ? ` <span class="muted">(${m.flag})</span>` : ''}
-      <span style="color:#f97316;margin-left:10px;">🕐 ${utcToKyiv(m.time_utc)}</span>
+      ${m.time_utc ? `<span style="color:#f97316;margin-left:10px;">🕐 ${utcToKyiv(m.time_utc)}</span>` : `<span class="muted" style="margin-left:10px;font-size:11px;">час уточнюється</span>`}
     </div>`
   ).join('');
 }
@@ -577,7 +577,7 @@ async function fetchTennis() {
             const oppName    = competitors[oppIdx]?.athlete?.displayName || '—';
             const oppCountry = competitors[oppIdx]?.athlete?.flag?.alt || '';
             const matchDate  = comp.date ? comp.date.slice(0, 10) : date;
-            const time_utc   = comp.date ? comp.date.slice(11, 16) : '';
+            const time_utc   = (comp.timeValid && comp.date) ? comp.date.slice(11, 16) : '';
             allMatches.push({ date: matchDate, player: uaName, opponent: oppName, flag: oppCountry, tournament: tournamentName, time_utc });
           }
         }

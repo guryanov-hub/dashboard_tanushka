@@ -565,7 +565,11 @@ async function fetchTennis() {
       if (!resp.ok) { debugLines.push(`${date}: HTTP ${resp.status}`); continue; }
       const data = await resp.json();
       const events = data.events || [];
-      debugLines.push(`${date}: ${events.length} матчів`);
+      const pairs = events.map(ev => {
+        const comps = ev.competitions?.[0]?.competitors || [];
+        return comps.map(c => c?.athlete?.displayName || c?.team?.displayName || '?').join(' vs ');
+      });
+      debugLines.push(`${date}: ${events.length} — ${pairs.join(' | ')}`);
       for (const ev of events) {
         const comps = ev.competitions?.[0]?.competitors || [];
         const names = comps.map(c => c?.athlete?.displayName || c?.team?.displayName || '?');

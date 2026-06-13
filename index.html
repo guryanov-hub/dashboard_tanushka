@@ -203,7 +203,7 @@
 
 <!-- Footer -->
 <footer style="text-align:center;color:#475569;font-size:12px;margin-top:16px;">
-  Дані: Open-Meteo (погода) · Лунний календар: локальний астрономічний розрахунок · Теніс: SofaScore API · Автооновлення кожні 60 с
+  Дані: Open-Meteo (погода) · Лунний календар: локальний астрономічний розрахунок · Теніс: ESPN WTA API · Автооновлення кожні 60 с
 </footer>
 
 <script>
@@ -545,15 +545,6 @@ function renderTennisDay() {
   ).join('');
 }
 
-async function sofaFetch(date) {
-  const direct = `https://api.sofascore.com/api/v1/sport/tennis/scheduled-events/${date}`;
-  const proxy  = `https://api.allorigins.win/raw?url=${encodeURIComponent(direct)}`;
-  let resp = await fetch(direct).catch(() => null);
-  if (!resp || !resp.ok) resp = await fetch(proxy);
-  if (!resp.ok) throw new Error(`HTTP ${resp.status} для ${date}`);
-  return resp.json();
-}
-
 async function fetchTennis() {
   if (tennisLoading) return;
   tennisLoading = true;
@@ -567,33 +558,39 @@ async function fetchTennis() {
   try {
     for (let i = 0; i < 7; i++) {
       const date = getDateStr(i);
-      const data = await sofaFetch(date);
-      const events = data.events || [];
-      totalEvents += events.length;
-      for (const ev of events) {
-        const home = (ev.homeTeam?.name || '').toLowerCase();
-        const away = (ev.awayTeam?.name || '').toLowerCase();
-        const kw = UA_KEYWORDS.find(k => home.includes(k) || away.includes(k));
+      const espnDate = date.replace(/-/g, '');
+      const resp = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard?dates=${espnDate}`
+      );
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      for (const ev of (data.events || [])) {
+        totalEvents++;
+        const comp = ev.competitions?.[0];
+        if (!comp) continue;
+        const [c1, c2] = comp.competitors || [];
+        const n1 = (c1?.athlete?.displayName || c1?.team?.displayName || '').toLowerCase();
+        const n2 = (c2?.athlete?.displayName || c2?.team?.displayName || '').toLowerCase();
+        const kw = UA_KEYWORDS.find(k => n1.includes(k) || n2.includes(k));
         if (!kw) continue;
-        const isHome = home.includes(kw);
-        const pt = isHome ? ev.homeTeam : ev.awayTeam;
-        const ot = isHome ? ev.awayTeam : ev.homeTeam;
-        allMatches.push({
-          date,
-          player:     pt.name,
-          opponent:   ot.name,
-          flag:       countryFlag(ot.country?.alpha2),
-          tournament: ev.tournament?.uniqueTournament?.name || ev.tournament?.name || '—',
-          time_utc:   tsToUtcHHMM(ev.startTimestamp),
-        });
+        const isC1 = n1.includes(kw);
+        const ua  = isC1 ? c1 : c2;
+        const opp = isC1 ? c2 : c1;
+        const uaName  = ua?.athlete?.displayName  || ua?.team?.displayName  || '—';
+        const oppName = opp?.athlete?.displayName || opp?.team?.displayName || '—';
+        const oppNat  = opp?.athlete?.flag?.alt   || opp?.athlete?.nationality || '';
+        const tournament = comp.notes?.[0]?.headline
+          || ev.name?.split(' - ')[0]
+          || '—';
+        const time_utc = ev.date ? ev.date.slice(11, 16) : '';
+        allMatches.push({ date, player: uaName, opponent: oppName, flag: oppNat, tournament, time_utc });
       }
     }
     tennisData = allMatches;
     renderTennisDay();
-    if (!allMatches.length) {
+    if (!allMatches.length)
       document.getElementById('tennis-content').innerHTML +=
-        `<div class="muted" style="font-size:11px;margin-top:8px;">Перевірено ${totalEvents} подій SofaScore — українських гравців не знайдено</div>`;
-    }
+        `<div class="muted" style="font-size:11px;margin-top:8px;">Перевірено ${totalEvents} подій ESPN WTA — українських гравців не знайдено</div>`;
   } catch(e) {
     document.getElementById('tennis-content').innerHTML =
       `<div style="color:#ef4444;padding:16px 0;font-size:13px;">Помилка: ${e.message}</div>`;

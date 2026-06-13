@@ -554,7 +554,7 @@ async function fetchTennis() {
     <div class="skeleton" style="height:36px;"></div>`;
 
   const allMatches = [];
-  let totalEvents = 0;
+  const debugLines = [];
   try {
     for (let i = 0; i < 7; i++) {
       const date = getDateStr(i);
@@ -562,27 +562,24 @@ async function fetchTennis() {
       const resp = await fetch(
         `https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard?dates=${espnDate}`
       );
-      if (!resp.ok) continue;
+      if (!resp.ok) { debugLines.push(`${date}: HTTP ${resp.status}`); continue; }
       const data = await resp.json();
-      for (const ev of (data.events || [])) {
-        totalEvents++;
-        const comp = ev.competitions?.[0];
-        if (!comp) continue;
-        const [c1, c2] = comp.competitors || [];
-        const n1 = (c1?.athlete?.displayName || c1?.team?.displayName || '').toLowerCase();
-        const n2 = (c2?.athlete?.displayName || c2?.team?.displayName || '').toLowerCase();
-        const kw = UA_KEYWORDS.find(k => n1.includes(k) || n2.includes(k));
+      const events = data.events || [];
+      debugLines.push(`${date}: ${events.length} матчів`);
+      for (const ev of events) {
+        const comps = ev.competitions?.[0]?.competitors || [];
+        const names = comps.map(c => c?.athlete?.displayName || c?.team?.displayName || '?');
+        const kw = UA_KEYWORDS.find(k => names.some(n => n.toLowerCase().includes(k)));
         if (!kw) continue;
-        const isC1 = n1.includes(kw);
-        const ua  = isC1 ? c1 : c2;
-        const opp = isC1 ? c2 : c1;
-        const uaName  = ua?.athlete?.displayName  || ua?.team?.displayName  || '—';
-        const oppName = opp?.athlete?.displayName || opp?.team?.displayName || '—';
-        const oppNat  = opp?.athlete?.flag?.alt   || opp?.athlete?.nationality || '';
-        const tournament = comp.notes?.[0]?.headline
-          || ev.name?.split(' - ')[0]
-          || '—';
-        const time_utc = ev.date ? ev.date.slice(11, 16) : '';
+        const uaIdx  = names.findIndex(n => n.toLowerCase().includes(kw));
+        const oppIdx = uaIdx === 0 ? 1 : 0;
+        const uaComp  = comps[uaIdx];
+        const oppComp = comps[oppIdx];
+        const uaName  = names[uaIdx];
+        const oppName = names[oppIdx] || '—';
+        const oppNat  = oppComp?.athlete?.flag?.alt || '';
+        const tournament = ev.competitions?.[0]?.notes?.[0]?.headline || ev.name || '—';
+        const time_utc   = ev.date ? ev.date.slice(11, 16) : '';
         allMatches.push({ date, player: uaName, opponent: oppName, flag: oppNat, tournament, time_utc });
       }
     }
@@ -590,7 +587,7 @@ async function fetchTennis() {
     renderTennisDay();
     if (!allMatches.length)
       document.getElementById('tennis-content').innerHTML +=
-        `<div class="muted" style="font-size:11px;margin-top:8px;">Перевірено ${totalEvents} подій ESPN WTA — українських гравців не знайдено</div>`;
+        `<div class="muted" style="font-size:11px;margin-top:8px;line-height:1.8">${debugLines.join('<br>')}</div>`;
   } catch(e) {
     document.getElementById('tennis-content').innerHTML =
       `<div style="color:#ef4444;padding:16px 0;font-size:13px;">Помилка: ${e.message}</div>`;

@@ -73,6 +73,25 @@
   @media(max-width:900px) {
     .main-grid { grid-template-columns: 1fr !important; }
   }
+
+  /* Forecast modal */
+  #forecast-modal {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.75);
+    z-index:1000; overflow-y:auto; padding:20px;
+  }
+  #forecast-box {
+    background:#1e293b; border:1px solid #334155; border-radius:16px;
+    max-width:500px; margin:40px auto; padding:24px;
+  }
+  .fc-row {
+    display:flex; align-items:center; gap:10px;
+    padding:5px 8px; border-radius:8px; font-size:12px;
+  }
+  .fc-row:hover { background:rgba(255,255,255,.04); }
+  .forecast-link {
+    font-size:10px; color:#475569; margin-left:5px; cursor:pointer;
+  }
+  .forecast-link:hover { color:#94a3b8; }
 </style>
 </head>
 <body style="min-height:100vh;padding:24px 32px;">
@@ -201,6 +220,17 @@
   </div>
 </div>
 
+<!-- Forecast modal -->
+<div id="forecast-modal" onclick="if(event.target===this)closeForecast()">
+  <div id="forecast-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div id="forecast-title" style="font-size:15px;font-weight:700;"></div>
+      <button onclick="closeForecast()" style="background:rgba(255,255,255,.08);border:none;color:#94a3b8;border-radius:8px;width:28px;height:28px;font-size:16px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="forecast-content" style="max-height:60vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
 <!-- Footer -->
 <footer style="text-align:center;color:#475569;font-size:12px;margin-top:16px;">
   Дані: Open-Meteo (погода) · Лунний календар: локальний астрономічний розрахунок · Теніс: ESPN WTA API · Автооновлення кожні 60 с
@@ -245,6 +275,63 @@ function switchTab(tab) {
   document.getElementById('tab-garden').classList.toggle('active', tab === 'garden');
   document.getElementById('panel-beauty').style.display = tab === 'beauty' ? '' : 'none';
   document.getElementById('panel-garden').style.display = tab === 'garden' ? '' : 'none';
+}
+
+// ── 30-day forecast modal ─────────────────────────────────────
+function showForecast(category) {
+  const TITLES = {
+    hair:   '✂️ Стрижка волосся — 30 днів',
+    dental: '🦷 Лікування зубів — 30 днів',
+    garden: '🌱 Прогноз для городу — 30 днів',
+  };
+  document.getElementById('forecast-title').textContent = TITLES[category] || category;
+
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  let html = '';
+
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const { signIdx, fraction, day } = calcMoonData(d);
+    const sign   = SIGNS[signIdx];
+    const pEmoji = phaseEmoji(fraction);
+    const dateStr = `${d.getDate()} ${UA_MONTHS[d.getMonth()]}`;
+    const isToday = i === 0;
+
+    let badge = '';
+    let rowBg  = isToday ? 'background:rgba(249,115,22,.12);' : '';
+
+    if (category === 'hair' || category === 'dental') {
+      const data = category === 'hair' ? HAIR[signIdx] : DENTAL[signIdx];
+      badge = pill(data.rate);
+      if (!isToday) {
+        const bg = { great:'rgba(34,197,94,.07)', bad:'rgba(245,158,11,.07)', avoid:'rgba(239,68,68,.07)', good:'' };
+        rowBg = bg[data.rate] || '';
+        if (rowBg) rowBg = 'background:' + rowBg + ';';
+      }
+    } else {
+      const ti = TYPE_INFO[sign.type];
+      badge = `<span style="background:${ti.bg};color:${ti.color};padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap">${ti.label}</span>`;
+    }
+
+    html += `<div class="fc-row" style="${rowBg}">
+      <div style="width:40px;font-size:12px;font-weight:${isToday?700:400};color:${isToday?'#f97316':'#f8fafc'}">${dateStr}</div>
+      <div style="font-size:15px;line-height:1">${pEmoji}</div>
+      <div style="width:18px;text-align:center;color:#64748b;font-size:11px">${day}</div>
+      <div style="width:72px;font-size:11px;color:#94a3b8;white-space:nowrap">${sign.emoji} ${sign.name}</div>
+      <div style="margin-left:auto">${badge}</div>
+    </div>`;
+  }
+
+  document.getElementById('forecast-content').innerHTML = html;
+  document.getElementById('forecast-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeForecast() {
+  document.getElementById('forecast-modal').style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 // ── Weather ───────────────────────────────────────────────────
@@ -442,14 +529,14 @@ function renderMoon() {
   document.getElementById('beauty-content').innerHTML = `<div class="fade-in">
     <div class="inset" style="margin-bottom:8px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <div style="font-size:13px;font-weight:600;">✂️ Стрижка волосся</div>${pill(hair.rate)}
+        <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="showForecast('hair')">✂️ Стрижка волосся <span class="forecast-link">прогноз ›</span></div>${pill(hair.rate)}
       </div>
       <div class="muted" style="font-size:12px;line-height:1.5">${hair.note}</div>
       ${waxing ? '<div style="font-size:11px;color:#22c55e;margin-top:4px">↑ Зростаючий місяць — ріст буде активнішим</div>' : '<div style="font-size:11px;color:#94a3b8;margin-top:4px">↓ Спадаючий місяць — ріст повільніший</div>'}
     </div>
     <div class="inset">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <div style="font-size:13px;font-weight:600;">🦷 Лікування зубів</div>${pill(dental.rate)}
+        <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="showForecast('dental')">🦷 Лікування зубів <span class="forecast-link">прогноз ›</span></div>${pill(dental.rate)}
       </div>
       <div class="muted" style="font-size:12px;line-height:1.5">${dental.note}</div>
     </div>
@@ -463,7 +550,7 @@ function renderMoon() {
     : '✂️ Спадаючий місяць — ідеально для обрізки, збору врожаю та кореневих робіт.';
   document.getElementById('garden-content').innerHTML = `<div class="fade-in">
     <div style="background:${gtype.bg};border:1px solid ${gtype.color}44;border-radius:10px;padding:10px 14px;margin-bottom:10px;">
-      <div style="color:${gtype.color};font-weight:600;font-size:13px;">${gtype.label}</div>
+      <div style="color:${gtype.color};font-weight:600;font-size:13px;cursor:pointer" onclick="showForecast('garden')">${gtype.label} <span style="font-size:10px;opacity:.5">прогноз ›</span></div>
       <div class="muted" style="font-size:11px;margin-top:2px">Місяць у ${sign.uk} ${sign.emoji}</div>
     </div>
     <div class="inset" style="margin-bottom:8px;">

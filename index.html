@@ -169,24 +169,13 @@
     <!-- Warning (new/full moon) -->
     <div id="moon-warning" style="display:none;" class="moon-warn"></div>
 
-    <!-- Tabs -->
-    <div style="display:flex;gap:6px;background:#0f172a;border-radius:10px;padding:4px;margin-bottom:14px;">
-      <button class="tab-btn active" id="tab-beauty" onclick="switchTab('beauty')">✂️ Краса та здоров'я</button>
-      <button class="tab-btn" id="tab-garden" onclick="switchTab('garden')">🌿 Рослини та город</button>
-    </div>
-
-    <!-- Tab: Beauty -->
-    <div id="panel-beauty">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div id="beauty-content">
         <div class="skeleton" style="margin-bottom:10px;"></div>
         <div class="skeleton" style="width:70%;margin-bottom:10px;"></div>
         <div class="skeleton" style="margin-bottom:10px;"></div>
         <div class="skeleton" style="width:80%;"></div>
       </div>
-    </div>
-
-    <!-- Tab: Garden -->
-    <div id="panel-garden" style="display:none;">
       <div id="garden-content">
         <div class="skeleton" style="margin-bottom:10px;"></div>
         <div class="skeleton" style="width:70%;margin-bottom:10px;"></div>
@@ -242,7 +231,6 @@ lucide.createIcons();
 // ── State ─────────────────────────────────────────────────────
 let selectedDate = new Date();
 selectedDate.setHours(12, 0, 0, 0);
-let activeTab = 'beauty';
 
 const dateInput = document.getElementById('moon-date');
 dateInput.value = toDateVal(selectedDate);
@@ -269,20 +257,13 @@ function toDateVal(d) {
   return d.toISOString().split('T')[0];
 }
 
-function switchTab(tab) {
-  activeTab = tab;
-  document.getElementById('tab-beauty').classList.toggle('active', tab === 'beauty');
-  document.getElementById('tab-garden').classList.toggle('active', tab === 'garden');
-  document.getElementById('panel-beauty').style.display = tab === 'beauty' ? '' : 'none';
-  document.getElementById('panel-garden').style.display = tab === 'garden' ? '' : 'none';
-}
-
 // ── 30-day forecast modal ─────────────────────────────────────
 function showForecast(category) {
   const TITLES = {
-    hair:   '✂️ Стрижка волосся — 30 днів',
-    dental: '🦷 Лікування зубів — 30 днів',
-    garden: '🌱 Прогноз для городу — 30 днів',
+    hair:     '✂️ Стрижка волосся — 30 днів',
+    dental:   '🦷 Лікування зубів — 30 днів',
+    watering: '💧 Полив рослин — 30 днів',
+    planting: '🌱 Висадка рослин — 30 днів',
   };
   document.getElementById('forecast-title').textContent = TITLES[category] || category;
 
@@ -293,7 +274,7 @@ function showForecast(category) {
   for (let i = 0; i < 30; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
-    const { signIdx, fraction, day } = calcMoonData(d);
+    const { signIdx, fraction, day, waxing: wx } = calcMoonData(d);
     const sign   = SIGNS[signIdx];
     const pEmoji = phaseEmoji(fraction);
     const dateStr = `${d.getDate()} ${UA_MONTHS[d.getMonth()]}`;
@@ -301,18 +282,20 @@ function showForecast(category) {
 
     let badge = '';
     let rowBg  = isToday ? 'background:rgba(249,115,22,.12);' : '';
+    const BG = { great:'rgba(34,197,94,.07)', bad:'rgba(245,158,11,.07)', avoid:'rgba(239,68,68,.07)', good:'' };
 
     if (category === 'hair' || category === 'dental') {
       const data = category === 'hair' ? HAIR[signIdx] : DENTAL[signIdx];
       badge = pill(data.rate);
-      if (!isToday) {
-        const bg = { great:'rgba(34,197,94,.07)', bad:'rgba(245,158,11,.07)', avoid:'rgba(239,68,68,.07)', good:'' };
-        rowBg = bg[data.rate] || '';
-        if (rowBg) rowBg = 'background:' + rowBg + ';';
-      }
-    } else {
-      const ti = TYPE_INFO[sign.type];
-      badge = `<span style="background:${ti.bg};color:${ti.color};padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap">${ti.label}</span>`;
+      if (!isToday) { rowBg = BG[data.rate] ? 'background:' + BG[data.rate] + ';' : ''; }
+    } else if (category === 'watering') {
+      const data = WATERING[signIdx];
+      badge = pill(data.rate);
+      if (!isToday) { rowBg = BG[data.rate] ? 'background:' + BG[data.rate] + ';' : ''; }
+    } else if (category === 'planting') {
+      const data = plantingRating(signIdx, fraction, wx);
+      badge = pill(data.rate);
+      if (!isToday) { rowBg = BG[data.rate] ? 'background:' + BG[data.rate] + ';' : ''; }
     }
 
     html += `<div class="fc-row" style="${rowBg}">
@@ -471,6 +454,35 @@ const DENTAL = {
   11:{rate:'avoid', note:'Підвищена кровоточивість, уникайте екстракцій'},
 };
 
+// ── Watering & Planting data ──────────────────────────────────
+const WATERING = {
+  0: {rate:'bad',   note:'Знак вогню — вода швидко випаровується, полив менш ефективний'},
+  1: {rate:'avoid', note:'Знак землі — надлишок вологи може спричинити кореневу гниль'},
+  2: {rate:'good',  note:'Повітряний знак — помірний полив добре засвоюється'},
+  3: {rate:'great', note:'Водний знак — найкращий день для поливу, вода живить усю рослину'},
+  4: {rate:'bad',   note:'Знак вогню — не найкращий час, волога швидко зникає'},
+  5: {rate:'avoid', note:'Знак землі — уникайте надмірного поливу, ризик гнилі'},
+  6: {rate:'good',  note:'Повітряний знак — добре для поливу квітів'},
+  7: {rate:'great', note:'Водний знак — відмінно, рослини активно засвоюють воду'},
+  8: {rate:'bad',   note:'Знак вогню — полив менш ефективний'},
+  9: {rate:'avoid', note:'Знак землі — обмежте полив, коріння чутливе до вологи'},
+  10:{rate:'good',  note:'Повітряний знак — підходить для помірного поливу'},
+  11:{rate:'great', note:'Водний знак — чудовий час для поливу, вода чудово засвоюється'},
+};
+
+function plantingRating(signIdx, fraction, waxing) {
+  const isNew  = fraction < 0.04 || fraction > 0.96;
+  const isFull = fraction > 0.46 && fraction < 0.54;
+  if (isNew)  return { rate:'avoid', note:'Новолуння — уникайте висадки рослин' };
+  if (isFull) return { rate:'bad',   note:'Повнолуння — небажано для висадки' };
+  const fertile   = new Set([1, 3, 7, 11]); // Телець, Рак, Скорпіон, Риби
+  const rootSigns = new Set([1, 5, 9]);     // Телець, Діва, Козеріг
+  if (waxing && fertile.has(signIdx))  return { rate:'great', note:'Зростаючий місяць у родючому знаку — ідеально для висадки' };
+  if (!waxing && rootSigns.has(signIdx)) return { rate:'great', note:'Спадаючий місяць — найкращий час для коренеплодів і цибулинних' };
+  if (waxing)  return { rate:'good', note:'Зростаючий місяць — сприятливо для посадки наземних рослин' };
+  return { rate:'good', note:'Спадаючий місяць — добре для кореневих і цибулинних рослин' };
+}
+
 // ── Garden data ───────────────────────────────────────────────
 const TYPE_INFO = {
   leaf:  { label:'🌿 Листовий день',  color:'#22c55e', bg:'rgba(34,197,94,.12)'   },
@@ -542,26 +554,22 @@ function renderMoon() {
     </div>
   </div>`;
 
-  // Garden tab
-  const gtype = TYPE_INFO[sign.type];
-  const gacts = GARDEN_ACTS[sign.type];
-  const phaseTip = waxing
-    ? '🌱 Зростаючий місяць — сприятливо для посіву та посадки наземних культур.'
-    : '✂️ Спадаючий місяць — ідеально для обрізки, збору врожаю та кореневих робіт.';
+  // Garden column
+  const watering = WATERING[signIdx];
+  const planting = plantingRating(signIdx, fraction, waxing);
   document.getElementById('garden-content').innerHTML = `<div class="fade-in">
-    <div style="background:${gtype.bg};border:1px solid ${gtype.color}44;border-radius:10px;padding:10px 14px;margin-bottom:10px;">
-      <div style="color:${gtype.color};font-weight:600;font-size:13px;cursor:pointer" onclick="showForecast('garden')">${gtype.label} <span style="font-size:10px;opacity:.5">прогноз ›</span></div>
-      <div class="muted" style="font-size:11px;margin-top:2px">Місяць у ${sign.uk} ${sign.emoji}</div>
-    </div>
     <div class="inset" style="margin-bottom:8px;">
-      <div class="section-title" style="color:#22c55e;">✅ Сприятливо</div>
-      ${gacts.good.map(a=>`<div style="font-size:12px;padding:2px 0;color:#e2e8f0">${a}</div>`).join('')}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="showForecast('watering')">💧 Полив рослин <span class="forecast-link">прогноз ›</span></div>${pill(watering.rate)}
+      </div>
+      <div class="muted" style="font-size:12px;line-height:1.5">${watering.note}</div>
     </div>
-    <div class="inset" style="margin-bottom:8px;">
-      <div class="section-title" style="color:#ef4444;">⛔ Краще уникати</div>
-      ${gacts.bad.map(a=>`<div style="font-size:12px;padding:2px 0;color:#94a3b8">${a}</div>`).join('')}
+    <div class="inset">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="showForecast('planting')">🌱 Висадка рослин <span class="forecast-link">прогноз ›</span></div>${pill(planting.rate)}
+      </div>
+      <div class="muted" style="font-size:12px;line-height:1.5">${planting.note}</div>
     </div>
-    <div style="background:#0f172a;border-left:3px solid #f97316;border-radius:0 8px 8px 0;padding:8px 12px;font-size:12px;color:#94a3b8;line-height:1.5">${phaseTip}</div>
   </div>`;
 }
 

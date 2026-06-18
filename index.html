@@ -1068,8 +1068,9 @@ function renderHistory(worldEvt, uaHardcoded, uaWikiEvt) {
 
   let html = '';
   if (worldEvt) html += row('🌍', worldEvt.year, worldEvt.text, worldEvt.url);
-  if (uaHardcoded) html += row('🇺🇦', uaHardcoded[0], uaHardcoded[1], uaHardcoded[2] || null);
-  else if (uaWikiEvt) html += row('🇺🇦', uaWikiEvt.year, uaWikiEvt.text, uaWikiEvt.url);
+  const UA_ICON = `<svg width="11" height="13" viewBox="0 0 12 14" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;display:inline-block"><path d="M6 13V6M2 1V6M10 1V6M2 6H10M6 1V4"/></svg>`;
+  if (uaHardcoded) html += row(UA_ICON, uaHardcoded[0], uaHardcoded[1], uaHardcoded[2] || null);
+  else if (uaWikiEvt) html += row(UA_ICON, uaWikiEvt.year, uaWikiEvt.text, uaWikiEvt.url);
 
   document.getElementById('history-content').innerHTML = html ||
     `<div class="muted" style="font-size:12px;text-align:center;padding:16px 0;">Немає даних</div>`;

@@ -432,22 +432,24 @@ function parseNBUDate(str) {
 
 async function fetchCurrency() {
   try {
-    const end = new Date();
-    const start3 = new Date(); start3.setDate(end.getDate() - 3);
-    const [usdR, eurR, btcR] = await Promise.all([
-      fetch(`https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&start=${nbuDateStr(start3)}&end=${nbuDateStr(end)}&json`).then(r => r.json()),
-      fetch(`https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=EUR&start=${nbuDateStr(start3)}&end=${nbuDateStr(end)}&json`).then(r => r.json()),
+    // Find previous business day (NBU doesn't publish on weekends)
+    const prevBiz = new Date();
+    prevBiz.setDate(prevBiz.getDate() - 1);
+    while (prevBiz.getDay() === 0 || prevBiz.getDay() === 6) prevBiz.setDate(prevBiz.getDate() - 1);
+
+    const [usdT, usdP, eurT, eurP, btcR] = await Promise.all([
+      fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&json').then(r => r.json()),
+      fetch(`https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&date=${nbuDateStr(prevBiz)}&json`).then(r => r.json()),
+      fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=EUR&json').then(r => r.json()),
+      fetch(`https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=EUR&date=${nbuDateStr(prevBiz)}&json`).then(r => r.json()),
       fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true').then(r => r.json()),
     ]);
-    const usdRate = usdR[usdR.length - 1]?.rate || 0;
-    const usdPrev = usdR[usdR.length - 2]?.rate || usdRate;
-    const eurRate = eurR[eurR.length - 1]?.rate || 0;
-    const eurPrev = eurR[eurR.length - 2]?.rate || eurRate;
-    const btcRate = btcR.bitcoin?.usd || 0;
-    const btcChange = btcR.bitcoin?.usd_24h_change || 0;
+    const usdRate = usdT[0]?.rate || 0, usdPrev = usdP[0]?.rate || usdRate;
+    const eurRate = eurT[0]?.rate || 0, eurPrev = eurP[0]?.rate || eurRate;
+    const btcRate = btcR.bitcoin?.usd || 0, btcChange = btcR.bitcoin?.usd_24h_change || 0;
     currencyData = {
-      USD: { rate: usdRate, change: (usdRate - usdPrev) / usdPrev * 100 },
-      EUR: { rate: eurRate, change: (eurRate - eurPrev) / eurPrev * 100 },
+      USD: { rate: usdRate, change: usdPrev ? (usdRate - usdPrev) / usdPrev * 100 : 0 },
+      EUR: { rate: eurRate, change: eurPrev ? (eurRate - eurPrev) / eurPrev * 100 : 0 },
       BTC: { rate: btcRate, change: btcChange },
     };
     renderCurrency();
@@ -534,11 +536,25 @@ async function getCurrencyHistory(code, days) {
     }
     data = full.slice(-days);
   } else {
-    const end = new Date();
-    const start = new Date(); start.setDate(end.getDate() - days);
-    const resp = await fetch(`https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=${code}&start=${nbuDateStr(start)}&end=${nbuDateStr(end)}&json`);
-    const json = await resp.json();
-    data = json.map(item => ({ date: parseNBUDate(item.exchangedate), rate: item.rate }));
+    // Individual date fetches in parallel (range endpoint unsupported by NBU).
+    // Sample every 3rd day for 90-day view to cap at ~30 requests.
+    const step = days > 30 ? 3 : 1;
+    const dateList = [];
+    for (let i = days; i >= 0; i -= step) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      if (d.getDay() !== 0 && d.getDay() !== 6) dateList.push(d);
+    }
+    const results = await Promise.all(
+      dateList.map(d =>
+        fetch(`https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=${code}&date=${nbuDateStr(d)}&json`)
+          .then(r => r.json())
+          .then(json => (Array.isArray(json) && json[0]?.rate)
+            ? { date: parseNBUDate(json[0].exchangedate), rate: json[0].rate }
+            : null)
+          .catch(() => null)
+      )
+    );
+    data = results.filter(Boolean);
   }
   currHistCache[key] = data;
   return data;

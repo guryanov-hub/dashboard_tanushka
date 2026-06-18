@@ -588,6 +588,23 @@ function tsToUtcHHMM(ts) {
   return new Date(ts * 1000).toISOString().slice(11, 16);
 }
 
+function buildScore(uaComp, oppComp) {
+  const uaLS  = uaComp?.linescores  || [];
+  const oppLS = oppComp?.linescores || [];
+  const sets  = Math.max(uaLS.length, oppLS.length);
+  if (!sets) return '';
+  return Array.from({length: sets}, (_, i) => {
+    const ua  = uaLS[i]  || {};
+    const opp = oppLS[i] || {};
+    let s = `${Math.round(ua.value ?? 0)}-${Math.round(opp.value ?? 0)}`;
+    if (ua.tiebreak !== undefined || opp.tiebreak !== undefined) {
+      const loserTb = ua.winner ? opp.tiebreak : ua.tiebreak;
+      if (loserTb !== undefined) s += `(${loserTb})`;
+    }
+    return s;
+  }).join(' ');
+}
+
 function utcToKyiv(t) {
   if (!t) return '—';
   const m = t.match(/^(\d{1,2}):(\d{2})$/);
@@ -623,12 +640,24 @@ function renderTennisDay() {
     container.innerHTML = `<div class="muted" style="padding:16px 0;font-size:13px;">Матчів не знайдено</div>`;
     return;
   }
-  container.innerHTML = matches.map(m =>
-    `<div class="fade-in" style="padding:8px 0;border-bottom:1px solid #1e293b;font-size:13px;">
-      <span style="color:#94a3b8">${m.tournament} · </span>${m.player} vs ${m.opponent}${m.flag ? ` <span class="muted">(${m.flag})</span>` : ''}
-      ${m.time_utc ? `<span style="color:#f97316;margin-left:10px;">🕐 ${utcToKyiv(m.time_utc)}</span>` : `<span class="muted" style="margin-left:10px;font-size:11px;">час уточнюється</span>`}
-    </div>`
-  ).join('');
+  container.innerHTML = matches.map(m => {
+    let statusHtml;
+    if (m.completed) {
+      const color = m.uaWon ? '#22c55e' : '#ef4444';
+      const label = m.uaWon ? '✓ Перемога' : '✗ Поразка';
+      statusHtml = `<span style="color:${color};margin-left:10px;font-size:11px;font-weight:600">${label}</span>`
+                 + (m.score ? ` <span style="color:#64748b;font-size:11px">${m.score}</span>` : '');
+    } else if (m.state === 'in') {
+      statusHtml = `<span style="color:#f97316;margin-left:10px;font-size:11px;font-weight:600">🔴 Live</span>`;
+    } else if (m.time_utc) {
+      statusHtml = `<span style="color:#f97316;margin-left:10px;">🕐 ${utcToKyiv(m.time_utc)}</span>`;
+    } else {
+      statusHtml = `<span class="muted" style="margin-left:10px;font-size:11px;">час уточнюється</span>`;
+    }
+    return `<div class="fade-in" style="padding:8px 0;border-bottom:1px solid #1e293b;font-size:13px;">
+      <span style="color:#94a3b8">${m.tournament} · </span>${m.player} vs ${m.opponent}${m.flag ? ` <span class="muted">(${m.flag})</span>` : ''}${statusHtml}
+    </div>`;
+  }).join('');
 }
 
 async function fetchTennis() {
@@ -665,7 +694,11 @@ async function fetchTennis() {
             const oppCountry = competitors[oppIdx]?.athlete?.flag?.alt || '';
             const matchDate  = comp.date ? comp.date.slice(0, 10) : date;
             const time_utc   = (comp.timeValid && comp.date) ? comp.date.slice(11, 16) : '';
-            allMatches.push({ date: matchDate, player: uaName, opponent: oppName, flag: oppCountry, tournament: tournamentName, time_utc });
+            const state      = comp.status?.type?.state || 'pre';
+            const completed  = comp.status?.type?.completed || false;
+            const uaWon      = competitors[uaIdx]?.winner || false;
+            const score      = completed ? buildScore(competitors[uaIdx], competitors[oppIdx]) : '';
+            allMatches.push({ date: matchDate, player: uaName, opponent: oppName, flag: oppCountry, tournament: tournamentName, time_utc, state, completed, uaWon, score });
           }
         }
       }

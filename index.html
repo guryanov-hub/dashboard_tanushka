@@ -1030,13 +1030,19 @@ async function fetchHistory() {
     const data = await resp.json();
     const evts = (data.events || []).filter(e => e.text && e.year);
     if (evts.length) {
+      const pageUrl = p => p.content_urls?.desktop?.page
+        || (p.titles?.canonical && `https://uk.wikipedia.org/wiki/${encodeURIComponent(p.titles.canonical)}`)
+        || (p.title && `https://uk.wikipedia.org/wiki/${encodeURIComponent(p.title)}`)
+        || null;
       const getUrl = e => {
-        const p = e.pages?.[0];
-        if (!p) return null;
-        return p.content_urls?.desktop?.page
-          || (p.titles?.canonical && `https://uk.wikipedia.org/wiki/${encodeURIComponent(p.titles.canonical)}`)
-          || (p.title && `https://uk.wikipedia.org/wiki/${encodeURIComponent(p.title)}`)
-          || null;
+        const pages = e.pages || [];
+        if (!pages.length) return null;
+        const GENERIC = /^(україна|ukraine|росія|russia|срср|ussr|soviet_union)$/i;
+        const best = pages.find(p => {
+          const t = p.titles?.canonical || p.title || '';
+          return t && !GENERIC.test(t);
+        }) || pages[0];
+        return pageUrl(best);
       };
       const linked = evts.map(e => ({ ...e, url: getUrl(e) })).filter(e => e.url);
       const isUkrainian = e => /україн/i.test(e.text);

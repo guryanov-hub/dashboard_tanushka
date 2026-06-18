@@ -131,7 +131,7 @@
   <div style="display:flex;flex-direction:column;gap:20px;">
 
   <!-- Weather -->
-  <div class="card" id="weather-card">
+  <div class="card" id="weather-card" style="flex:1;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
       <div class="icon-wrap">
         <i data-lucide="cloud-sun" class="accent" style="width:20px;height:20px;"></i>
@@ -150,7 +150,7 @@
   </div>
 
   <!-- Currency -->
-  <div class="card" id="currency-card">
+  <div class="card" id="currency-card" style="flex:1;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
       <div class="icon-wrap">
         <i data-lucide="banknote" class="accent" style="width:20px;height:20px;"></i>
@@ -394,14 +394,18 @@ async function fetchWeather() {
               <div class="muted" style="font-size:12px">Цельсій</div>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;padding-top:6px;">
-            <div class="inset" style="padding:7px 10px;">
-              <div class="muted" style="font-size:10px;margin-bottom:2px;">Вологість</div>
-              <div style="font-size:13px;font-weight:600;">${c.relative_humidity_2m}<span class="muted" style="font-size:10px">%</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;padding-top:4px;">
+            <div class="inset" style="padding:8px 12px;">
+              <div style="display:flex;align-items:baseline;gap:8px;">
+                <span class="muted" style="font-size:12px;white-space:nowrap;">Вологість</span>
+                <span style="font-size:20px;font-weight:700;line-height:1;">${c.relative_humidity_2m}<span class="muted" style="font-size:12px">%</span></span>
+              </div>
             </div>
-            <div class="inset" style="padding:7px 10px;">
-              <div class="muted" style="font-size:10px;margin-bottom:2px;">Вітер</div>
-              <div style="font-size:13px;font-weight:600;">${Math.round(c.wind_speed_10m)}<span class="muted" style="font-size:10px"> км/год</span></div>
+            <div class="inset" style="padding:8px 12px;">
+              <div style="display:flex;align-items:baseline;gap:8px;">
+                <span class="muted" style="font-size:12px;white-space:nowrap;">Вітер</span>
+                <span style="font-size:20px;font-weight:700;line-height:1;">${Math.round(c.wind_speed_10m)}<span class="muted" style="font-size:12px"> км/год</span></span>
+              </div>
             </div>
           </div>
         </div>

@@ -538,15 +538,15 @@ function renderMoon() {
   // Beauty tab
   const hair   = HAIR[signIdx];
   const dental = DENTAL[signIdx];
-  document.getElementById('beauty-content').innerHTML = `<div class="fade-in">
-    <div class="inset" style="margin-bottom:8px;">
+  document.getElementById('beauty-content').innerHTML = `<div class="fade-in" style="display:flex;flex-direction:column;height:100%;gap:8px;">
+    <div class="inset" style="flex:1;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="showForecast('hair')">✂️ Стрижка волосся <span class="forecast-link">прогноз ›</span></div>${pill(hair.rate)}
       </div>
       <div class="muted" style="font-size:12px;line-height:1.5">${hair.note}</div>
       ${waxing ? '<div style="font-size:11px;color:#22c55e;margin-top:4px">↑ Зростаючий місяць — ріст буде активнішим</div>' : '<div style="font-size:11px;color:#94a3b8;margin-top:4px">↓ Спадаючий місяць — ріст повільніший</div>'}
     </div>
-    <div class="inset">
+    <div class="inset" style="flex:1;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="showForecast('dental')">🦷 Лікування зубів <span class="forecast-link">прогноз ›</span></div>${pill(dental.rate)}
       </div>
@@ -557,14 +557,14 @@ function renderMoon() {
   // Garden column
   const watering = WATERING[signIdx];
   const planting = plantingRating(signIdx, fraction, waxing);
-  document.getElementById('garden-content').innerHTML = `<div class="fade-in">
-    <div class="inset" style="margin-bottom:8px;">
+  document.getElementById('garden-content').innerHTML = `<div class="fade-in" style="display:flex;flex-direction:column;height:100%;gap:8px;">
+    <div class="inset" style="flex:1;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="showForecast('watering')">💧 Полив рослин <span class="forecast-link">прогноз ›</span></div>${pill(watering.rate)}
       </div>
       <div class="muted" style="font-size:12px;line-height:1.5">${watering.note}</div>
     </div>
-    <div class="inset">
+    <div class="inset" style="flex:1;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="showForecast('planting')">🌱 Висадка рослин <span class="forecast-link">прогноз ›</span></div>${pill(planting.rate)}
       </div>

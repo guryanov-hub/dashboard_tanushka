@@ -124,8 +124,8 @@
   </div>
 </header>
 
-<!-- Row 1: weather+currency | moon (natural heights) -->
-<div style="display:grid;grid-template-columns:40% 1fr;gap:20px;margin-bottom:20px;align-items:start;">
+<!-- 2-column layout: left=weather+currency+tennis | right=moon+history -->
+<div class="main-grid" style="display:grid;grid-template-columns:40% 1fr;gap:20px;margin-bottom:20px;">
 
   <!-- Left col, row 1: Weather + Currency stacked (same height as moon) -->
   <div style="display:flex;flex-direction:column;gap:20px;">
@@ -217,11 +217,6 @@
 
   </div><!-- /right row 1: moon -->
 
-</div><!-- /row 1 -->
-
-<!-- Row 2: tennis | history (same height) -->
-<div class="main-grid" style="display:grid;grid-template-columns:40% 1fr;gap:20px;margin-bottom:20px;align-items:stretch;">
-
   <!-- Left col, row 2: Tennis -->
   <div class="card" id="tennis-card">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
@@ -259,7 +254,7 @@
     </div>
   </div>
 
-</div><!-- /row 2 -->
+</div><!-- /2-column layout -->
 
 <!-- Forecast modal -->
 <div id="forecast-modal" onclick="if(event.target===this)closeForecast()">

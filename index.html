@@ -124,52 +124,52 @@
   </div>
 </header>
 
-<!-- Row 1: weather+currency | moon -->
-<div class="main-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;align-items:start;">
+<!-- 2-column layout: left=weather+currency+tennis | right=moon+history -->
+<div class="main-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
 
-  <!-- Col 1: Weather + Currency -->
+  <!-- Left col, row 1: Weather + Currency stacked (same height as moon) -->
   <div style="display:flex;flex-direction:column;gap:20px;">
 
-  <!-- Weather -->
-  <div class="card" id="weather-card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-      <div class="icon-wrap">
-        <i data-lucide="cloud-sun" class="accent" style="width:20px;height:20px;"></i>
+    <!-- Weather -->
+    <div class="card" id="weather-card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div class="icon-wrap">
+          <i data-lucide="cloud-sun" class="accent" style="width:20px;height:20px;"></i>
+        </div>
+        <div>
+          <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Погода</div>
+          <div style="font-size:14px;font-weight:600;">Київ, UA<span id="weather-desc" class="muted" style="font-size:12px;font-weight:400;margin-left:6px;"></span></div>
+        </div>
       </div>
-      <div>
-        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Погода</div>
-        <div style="font-size:14px;font-weight:600;">Київ, UA<span id="weather-desc" class="muted" style="font-size:12px;font-weight:400;margin-left:6px;"></span></div>
+      <div id="weather-content">
+        <div class="skeleton" style="height:56px;margin-bottom:14px;"></div>
+        <div class="skeleton" style="width:60%;margin-bottom:10px;"></div>
+        <div class="skeleton" style="width:80%;margin-bottom:10px;"></div>
+        <div class="skeleton" style="width:50%;"></div>
       </div>
     </div>
-    <div id="weather-content">
-      <div class="skeleton" style="height:56px;margin-bottom:14px;"></div>
-      <div class="skeleton" style="width:60%;margin-bottom:10px;"></div>
-      <div class="skeleton" style="width:80%;margin-bottom:10px;"></div>
-      <div class="skeleton" style="width:50%;"></div>
-    </div>
-  </div>
 
-  <!-- Currency -->
-  <div class="card" id="currency-card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-      <div class="icon-wrap">
-        <i data-lucide="banknote" class="accent" style="width:20px;height:20px;"></i>
+    <!-- Currency -->
+    <div class="card" id="currency-card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div class="icon-wrap">
+          <i data-lucide="banknote" class="accent" style="width:20px;height:20px;"></i>
+        </div>
+        <div>
+          <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Валюта</div>
+          <div style="font-size:14px;font-weight:600;">НБУ · BTC</div>
+        </div>
       </div>
-      <div>
-        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Валюта</div>
-        <div style="font-size:14px;font-weight:600;">НБУ · BTC</div>
+      <div id="currency-content">
+        <div class="skeleton" style="height:40px;margin-bottom:6px;border-radius:8px;"></div>
+        <div class="skeleton" style="height:40px;margin-bottom:6px;border-radius:8px;"></div>
+        <div class="skeleton" style="height:40px;border-radius:8px;"></div>
       </div>
     </div>
-    <div id="currency-content">
-      <div class="skeleton" style="height:40px;margin-bottom:6px;border-radius:8px;"></div>
-      <div class="skeleton" style="height:40px;margin-bottom:6px;border-radius:8px;"></div>
-      <div class="skeleton" style="height:40px;border-radius:8px;"></div>
-    </div>
-  </div>
 
-  </div><!-- /col 1 -->
+  </div><!-- /left row 1 -->
 
-  <!-- Col 2: Moon -->
+  <!-- Right col, row 1: Moon -->
   <div class="card" id="moon-card">
 
     <!-- Moon card header: date picker + phase summary -->
@@ -215,14 +215,9 @@
       <div class="inset"><div class="skeleton" style="height:14px;margin-bottom:8px;"></div><div class="skeleton" style="height:14px;width:70%;"></div></div>
     </div>
 
-  </div><!-- /col 2: moon -->
+  </div><!-- /right row 1: moon -->
 
-</div><!-- /row 1 -->
-
-<!-- Row 2: tennis | history -->
-<div class="main-grid" style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:20px;align-items:start;">
-
-  <!-- Tennis WTA -->
+  <!-- Left col, row 2: Tennis -->
   <div class="card" id="tennis-card">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
       <div style="display:flex;align-items:center;gap:12px;">
@@ -242,7 +237,7 @@
     </div>
   </div>
 
-  <!-- This day in history -->
+  <!-- Right col, row 2: History -->
   <div class="card" id="history-card">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
       <div class="icon-wrap">
@@ -259,7 +254,7 @@
     </div>
   </div>
 
-</div><!-- /row 2 -->
+</div><!-- /2-column layout -->
 
 <!-- Forecast modal -->
 <div id="forecast-modal" onclick="if(event.target===this)closeForecast()">

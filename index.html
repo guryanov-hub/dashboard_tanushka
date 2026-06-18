@@ -1043,11 +1043,10 @@ async function fetchHistory() {
           || (p.title && `https://uk.wikipedia.org/wiki/${encodeURIComponent(p.title)}`)
           || null;
       };
-      const old    = evts.find(e => e.year < 1900) || evts[0];
-      const modern = [...evts].reverse().find(e => e.year >= 1900 && e !== old) || null;
-      worldEvts = modern
-        ? [{ ...old, url: getUrl(old) }, { ...modern, url: getUrl(modern) }]
-        : [{ ...old, url: getUrl(old) }];
+      const linked = evts.map(e => ({ ...e, url: getUrl(e) })).filter(e => e.url);
+      const old    = linked.find(e => e.year < 1900) || linked[0];
+      const modern = old ? ([...linked].reverse().find(e => e !== old) || null) : null;
+      if (old) worldEvts = modern ? [old, modern] : [old];
     }
   } catch(_) {}
   renderHistory(worldEvts, uaEvt);

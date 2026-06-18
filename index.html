@@ -1030,36 +1030,20 @@ async function fetchHistory() {
     const data = await resp.json();
     const evts = (data.events || []).filter(e => e.text && e.year);
     if (evts.length) {
-      const pageUrl = p => p.content_urls?.desktop?.page
-        || (p.titles?.canonical && `https://uk.wikipedia.org/wiki/${encodeURIComponent(p.titles.canonical)}`)
-        || (p.title && `https://uk.wikipedia.org/wiki/${encodeURIComponent(p.title)}`)
-        || null;
-      const getUrl = e => {
-        const pages = e.pages || [];
-        if (!pages.length) return null;
-        const GENERIC = /^(україна|ukraine|росія|russia|срср|ussr|soviet_union)$/i;
-        const best = pages.find(p => {
-          const t = p.titles?.canonical || p.title || '';
-          return t && !GENERIC.test(t);
-        }) || pages[0];
-        return pageUrl(best);
-      };
-      const linked = evts.map(e => ({ ...e, url: getUrl(e) })).filter(e => e.url);
       const isUkrainian = e => /україн/i.test(e.text);
-      const worldLinked = linked.filter(e => !isUkrainian(e));
-      const uaLinked    = linked.filter(e =>  isUkrainian(e));
-      worldEvt = worldLinked.find(e => e.year < 1900) || worldLinked[0] || null;
-      if (!uaHardcoded) uaWikiEvt = uaLinked[0] || null;
+      const worldEvts = evts.filter(e => !isUkrainian(e));
+      const uaEvts    = evts.filter(e =>  isUkrainian(e));
+      worldEvt = worldEvts.find(e => e.year < 1900) || worldEvts[0] || null;
+      if (!uaHardcoded) uaWikiEvt = uaEvts[0] || null;
     }
   } catch(_) {}
   renderHistory(worldEvt, uaHardcoded, uaWikiEvt);
 }
 
 function renderHistory(worldEvt, uaHardcoded, uaWikiEvt) {
-  const row = (icon, year, text, url) => {
-    const body = url
-      ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#e2e8f0;text-decoration:none;border-bottom:1px dotted #475569;" onmouseenter="this.style.color='#f97316';this.style.borderBottomColor='#f97316'" onmouseleave="this.style.color='#e2e8f0';this.style.borderBottomColor='#475569'">${text}</a>`
-      : text;
+  const row = (icon, year, text) => {
+    const url = `https://www.google.com/search?q=${encodeURIComponent(year + ' ' + text)}`;
+    const body = `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#e2e8f0;text-decoration:none;border-bottom:1px dotted #475569;" onmouseenter="this.style.color='#f97316';this.style.borderBottomColor='#f97316'" onmouseleave="this.style.color='#e2e8f0';this.style.borderBottomColor='#475569'">${text}</a>`;
     return `<div style="padding:9px 0;border-bottom:1px solid #1e293b;">
       <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:4px;">${icon} ${year}</div>
       <div style="font-size:12px;line-height:1.5;color:#e2e8f0;">${body}</div>
@@ -1067,10 +1051,10 @@ function renderHistory(worldEvt, uaHardcoded, uaWikiEvt) {
   };
 
   let html = '';
-  if (worldEvt) html += row('🌍', worldEvt.year, worldEvt.text, worldEvt.url);
+  if (worldEvt) html += row('🌍', worldEvt.year, worldEvt.text);
   const UA_ICON = `<svg viewBox="0 0 20 14" width="15" height="11" style="vertical-align:-2px;display:inline-block;border-radius:2px"><rect width="20" height="7" fill="#005BBB"/><rect y="7" width="20" height="7" fill="#FFD500"/></svg>`;
-  if (uaHardcoded) html += row(UA_ICON, uaHardcoded[0], uaHardcoded[1], uaHardcoded[2] || null);
-  else if (uaWikiEvt) html += row(UA_ICON, uaWikiEvt.year, uaWikiEvt.text, uaWikiEvt.url);
+  if (uaHardcoded) html += row(UA_ICON, uaHardcoded[0], uaHardcoded[1]);
+  else if (uaWikiEvt) html += row(UA_ICON, uaWikiEvt.year, uaWikiEvt.text);
 
   document.getElementById('history-content').innerHTML = html ||
     `<div class="muted" style="font-size:12px;text-align:center;padding:16px 0;">Немає даних</div>`;

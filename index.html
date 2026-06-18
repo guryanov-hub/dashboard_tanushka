@@ -407,15 +407,15 @@ async function fetchWeather() {
     const d = await r.json(); const c = d.current;
     document.getElementById('weather-content').innerHTML = `
       <div class="fade-in">
-        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;">
-          <div style="display:flex;align-items:flex-end;gap:8px;flex:1;">
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:10px;">
             <span style="font-size:52px;line-height:1">${wIcon(c.weather_code)}</span>
             <div>
               <div style="font-size:48px;font-weight:700;line-height:1" class="accent">${Math.round(c.temperature_2m)}°</div>
               <div class="muted" style="font-size:12px">Цельсій</div>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;padding-top:4px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
             <div class="inset" style="padding:8px 12px;">
               <div style="display:flex;align-items:baseline;gap:8px;">
                 <span class="muted" style="font-size:12px;white-space:nowrap;">Вологість</span>
@@ -495,10 +495,10 @@ function renderCurrency() {
     </div>`;
   };
   document.getElementById('currency-content').innerHTML =
-    `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    `<div style="display:flex;flex-direction:column;gap:8px;">
       ${cell('USD', 'USD / UAH', currencyData.USD.rate.toFixed(4),  currencyData.USD.change)}
-      ${cell('BTC', 'BTC / USD', Math.round(currencyData.BTC.rate).toLocaleString('uk-UA'), currencyData.BTC.change)}
       ${cell('EUR', 'EUR / UAH', currencyData.EUR.rate.toFixed(4),  currencyData.EUR.change)}
+      ${cell('BTC', 'BTC / USD', Math.round(currencyData.BTC.rate).toLocaleString('uk-UA'), currencyData.BTC.change)}
     </div>`;
 }
 

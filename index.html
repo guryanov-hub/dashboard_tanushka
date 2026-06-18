@@ -124,11 +124,11 @@
   </div>
 </header>
 
-<!-- Top row: weather + moon header -->
-<div class="main-grid" style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:20px;">
+<!-- 3-column main layout: weather+currency | tennis+history | moon -->
+<div class="main-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px;align-items:start;">
 
-  <!-- Left column: weather + currency -->
-  <div style="display:flex;flex-direction:column;gap:20px;align-self:start;">
+  <!-- Col 1: Weather + Currency -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
 
   <!-- Weather -->
   <div class="card" id="weather-card">
@@ -167,9 +167,51 @@
     </div>
   </div>
 
-  </div><!-- /left column -->
+  </div><!-- /col 1 -->
 
-  <!-- Moon unified card -->
+  <!-- Col 2: Tennis + History -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+  <!-- Tennis WTA -->
+  <div class="card" id="tennis-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="icon-wrap">
+          <i data-lucide="trophy" class="accent" style="width:20px;height:20px;"></i>
+        </div>
+        <div>
+          <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Теніс WTA</div>
+          <div style="font-size:14px;font-weight:600;">Українські гравчині</div>
+        </div>
+      </div>
+      <button onclick="fetchTennis()" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;">↻ Оновити</button>
+    </div>
+    <div id="tennis-tabs" style="display:flex;gap:6px;background:#0f172a;border-radius:10px;padding:4px;margin-bottom:14px;overflow-x:auto;"></div>
+    <div id="tennis-content">
+      <div class="muted" style="text-align:center;padding:24px;font-size:13px;">Завантаження...</div>
+    </div>
+  </div>
+
+  <!-- This day in history -->
+  <div class="card" id="history-card">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div class="icon-wrap">
+        <i data-lucide="book-open" class="accent" style="width:20px;height:20px;"></i>
+      </div>
+      <div>
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Цей день в історії</div>
+        <div id="history-date" style="font-size:14px;font-weight:600;">—</div>
+      </div>
+    </div>
+    <div id="history-content">
+      <div class="skeleton" style="height:80px;margin-bottom:8px;border-radius:8px;"></div>
+      <div class="skeleton" style="height:80px;border-radius:8px;"></div>
+    </div>
+  </div>
+
+  </div><!-- /col 2 -->
+
+  <!-- Col 3: Moon -->
   <div class="card" id="moon-card">
 
     <!-- Moon card header: date picker + phase summary -->
@@ -215,51 +257,9 @@
       <div class="inset"><div class="skeleton" style="height:14px;margin-bottom:8px;"></div><div class="skeleton" style="height:14px;width:70%;"></div></div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /col 3: moon -->
 
-<div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:20px;align-items:start;">
-
-<!-- Tennis WTA -->
-<div class="card" id="tennis-card">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <div class="icon-wrap">
-        <i data-lucide="trophy" class="accent" style="width:20px;height:20px;"></i>
-      </div>
-      <div>
-        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Теніс WTA</div>
-        <div style="font-size:14px;font-weight:600;">Українські гравчині</div>
-      </div>
-    </div>
-    <button onclick="fetchTennis()" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;">↻ Оновити</button>
-  </div>
-
-  <div id="tennis-tabs" style="display:flex;gap:6px;background:#0f172a;border-radius:10px;padding:4px;margin-bottom:14px;overflow-x:auto;"></div>
-
-  <div id="tennis-content">
-    <div class="muted" style="text-align:center;padding:24px;font-size:13px;">Введіть API ключ та натисніть «Оновити»</div>
-  </div>
-</div>
-
-<!-- This day in history -->
-<div class="card" id="history-card">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-    <div class="icon-wrap">
-      <i data-lucide="book-open" class="accent" style="width:20px;height:20px;"></i>
-    </div>
-    <div>
-      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Цей день в історії</div>
-      <div id="history-date" style="font-size:14px;font-weight:600;">—</div>
-    </div>
-  </div>
-  <div id="history-content">
-    <div class="skeleton" style="height:80px;margin-bottom:8px;border-radius:8px;"></div>
-    <div class="skeleton" style="height:80px;border-radius:8px;"></div>
-  </div>
-</div>
-
-</div><!-- /tennis+history grid -->
+</div><!-- /main-grid -->
 
 <!-- Forecast modal -->
 <div id="forecast-modal" onclick="if(event.target===this)closeForecast()">

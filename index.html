@@ -1025,8 +1025,9 @@ async function fetchHistory() {
   document.getElementById('history-date').textContent =
     `${today.getDate()} ${UA_MONTHS[today.getMonth()]}`;
 
-  const uaEvt = UA_HISTORY[`${mm}-${dd}`] || null;
-  let worldEvts = [];
+  const uaHardcoded = UA_HISTORY[`${mm}-${dd}`] || null;
+  let worldEvt = null;
+  let uaWikiEvt = null;
   try {
     const resp = await fetch(
       `https://uk.wikipedia.org/api/rest_v1/feed/onthisday/events/${mm}/${dd}`,
@@ -1044,15 +1045,17 @@ async function fetchHistory() {
           || null;
       };
       const linked = evts.map(e => ({ ...e, url: getUrl(e) })).filter(e => e.url);
-      const old    = linked.find(e => e.year < 1900) || linked[0];
-      const modern = old ? ([...linked].reverse().find(e => e !== old) || null) : null;
-      if (old) worldEvts = modern ? [old, modern] : [old];
+      const isUkrainian = e => /україн/i.test(e.text);
+      const worldLinked = linked.filter(e => !isUkrainian(e));
+      const uaLinked    = linked.filter(e =>  isUkrainian(e));
+      worldEvt = worldLinked.find(e => e.year < 1900) || worldLinked[0] || null;
+      if (!uaHardcoded) uaWikiEvt = uaLinked[0] || null;
     }
   } catch(_) {}
-  renderHistory(worldEvts, uaEvt);
+  renderHistory(worldEvt, uaHardcoded, uaWikiEvt);
 }
 
-function renderHistory(worldEvts, uaEvt) {
+function renderHistory(worldEvt, uaHardcoded, uaWikiEvt) {
   const row = (icon, year, text, url) => {
     const body = url
       ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#e2e8f0;text-decoration:none;border-bottom:1px dotted #475569;" onmouseenter="this.style.color='#f97316';this.style.borderBottomColor='#f97316'" onmouseleave="this.style.color='#e2e8f0';this.style.borderBottomColor='#475569'">${text}</a>`
@@ -1063,8 +1066,10 @@ function renderHistory(worldEvts, uaEvt) {
     </div>`;
   };
 
-  let html = worldEvts.map(e => row('🌍', e.year, e.text, e.url)).join('');
-  if (uaEvt) html += row('🇺🇦', uaEvt[0], uaEvt[1], uaEvt[2] || null);
+  let html = '';
+  if (worldEvt) html += row('🌍', worldEvt.year, worldEvt.text, worldEvt.url);
+  if (uaHardcoded) html += row('🇺🇦', uaHardcoded[0], uaHardcoded[1], uaHardcoded[2] || null);
+  else if (uaWikiEvt) html += row('🇺🇦', uaWikiEvt.year, uaWikiEvt.text, uaWikiEvt.url);
 
   document.getElementById('history-content').innerHTML = html ||
     `<div class="muted" style="font-size:12px;text-align:center;padding:16px 0;">Немає даних</div>`;

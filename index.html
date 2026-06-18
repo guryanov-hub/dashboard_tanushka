@@ -464,11 +464,11 @@ function renderCurrency() {
     const chgSign  = chg >= 0 ? '+' : '';
     const arrow    = chg >= 0 ? '▲' : '▼';
     return `<div onclick="openCurrencyModal('${code}')"
-      style="background:#0f172a;border-radius:8px;padding:10px 12px;cursor:pointer;transition:opacity .15s;"
+      style="background:#0f172a;border-radius:8px;padding:8px 12px;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;gap:8px;"
       onmouseenter="this.style.opacity='.75'" onmouseleave="this.style.opacity='1'">
-      <div class="muted" style="font-size:11px;margin-bottom:4px;">${label}</div>
-      <div style="font-size:15px;font-weight:700;line-height:1.2;">${rateStr}</div>
-      <div style="color:${chgColor};font-size:11px;margin-top:3px;">${arrow} ${chgSign}${(chg||0).toFixed(2)}%</div>
+      <span class="muted" style="font-size:12px;flex:0 0 auto;">${label}</span>
+      <span style="font-size:14px;font-weight:700;flex:1;text-align:right;">${rateStr}</span>
+      <span style="color:${chgColor};font-size:11px;flex:0 0 52px;text-align:right;">${arrow} ${chgSign}${(chg||0).toFixed(2)}%</span>
     </div>`;
   };
   document.getElementById('currency-content').innerHTML =

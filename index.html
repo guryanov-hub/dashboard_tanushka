@@ -1068,7 +1068,7 @@ function renderHistory(worldEvt, uaHardcoded, uaWikiEvt) {
 
   let html = '';
   if (worldEvt) html += row('🌍', worldEvt.year, worldEvt.text, worldEvt.url);
-  const UA_ICON = `<svg width="11" height="13" viewBox="0 0 12 14" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;display:inline-block"><path d="M6 13V6M2 1V6M10 1V6M2 6H10M6 1V4"/></svg>`;
+  const UA_ICON = `<svg viewBox="0 0 30 38" fill="#fbbf24" width="12" height="15" style="vertical-align:-3px;display:inline-block"><path d="M1,24 L1,12 Q1,4 6,4 Q11,4 11,12 L11,24 Z"/><path d="M13,24 L13,2 Q13,0 15,0 Q17,0 17,2 L17,24 Z"/><path d="M19,24 L19,12 Q19,4 24,4 Q29,4 29,12 L29,24 Z"/><rect x="1" y="22" width="28" height="4" rx="1"/><rect x="13" y="26" width="4" height="12" rx="1"/></svg>`;
   if (uaHardcoded) html += row(UA_ICON, uaHardcoded[0], uaHardcoded[1], uaHardcoded[2] || null);
   else if (uaWikiEvt) html += row(UA_ICON, uaWikiEvt.year, uaWikiEvt.text, uaWikiEvt.url);
 

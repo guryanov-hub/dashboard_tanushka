@@ -415,18 +415,12 @@ async function fetchWeather() {
               <div class="muted" style="font-size:12px">Цельсій</div>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <div class="inset" style="padding:8px 12px;">
-              <div style="display:flex;align-items:baseline;gap:8px;">
-                <span class="muted" style="font-size:12px;white-space:nowrap;">Вологість</span>
-                <span style="font-size:20px;font-weight:700;line-height:1;">${c.relative_humidity_2m}<span class="muted" style="font-size:12px">%</span></span>
-              </div>
-            </div>
-            <div class="inset" style="padding:8px 12px;">
-              <div style="display:flex;align-items:baseline;gap:8px;">
-                <span class="muted" style="font-size:12px;white-space:nowrap;">Вітер</span>
-                <span style="font-size:20px;font-weight:700;line-height:1;">${Math.round(c.wind_speed_10m)}<span class="muted" style="font-size:12px"> км/год</span></span>
-              </div>
+          <div class="inset" style="padding:8px 12px;">
+            <div style="display:grid;grid-template-columns:max-content 1fr;gap:5px 12px;align-items:baseline;">
+              <span class="muted" style="font-size:12px;white-space:nowrap;">Вологість</span>
+              <span style="font-size:20px;font-weight:700;line-height:1;">${c.relative_humidity_2m}<span class="muted" style="font-size:12px">%</span></span>
+              <span class="muted" style="font-size:12px;white-space:nowrap;">Вітер</span>
+              <span style="font-size:20px;font-weight:700;line-height:1;">${Math.round(c.wind_speed_10m)}<span class="muted" style="font-size:12px"> км/год</span></span>
             </div>
           </div>
         </div>

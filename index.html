@@ -138,7 +138,7 @@
       </div>
       <div>
         <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Погода</div>
-        <div style="font-size:14px;font-weight:600;">Київ, UA</div>
+        <div style="font-size:14px;font-weight:600;">Київ, UA<span id="weather-desc" class="muted" style="font-size:12px;font-weight:400;margin-left:6px;"></span></div>
       </div>
     </div>
     <div id="weather-content">
@@ -409,8 +409,8 @@ async function fetchWeather() {
             </div>
           </div>
         </div>
-        <div style="font-size:14px;font-weight:500;">${WEATHER_CODES[c.weather_code]||'Невідомо'}</div>
       </div>`;
+    document.getElementById('weather-desc').textContent = WEATHER_CODES[c.weather_code] || '';
   } catch(e) {
     document.getElementById('weather-content').innerHTML = '<div class="muted" style="text-align:center;padding:20px;opacity:.6">— немає даних —</div>';
   }
@@ -476,8 +476,7 @@ function renderCurrency() {
       ${cell('USD', 'USD / UAH', currencyData.USD.rate.toFixed(4),  currencyData.USD.change)}
       ${cell('BTC', 'BTC / USD', Math.round(currencyData.BTC.rate).toLocaleString('uk-UA'), currencyData.BTC.change)}
       ${cell('EUR', 'EUR / UAH', currencyData.EUR.rate.toFixed(4),  currencyData.EUR.change)}
-    </div>
-    <div class="muted" style="font-size:10px;text-align:right;margin-top:6px;">НБУ · CoinGecko</div>`;
+    </div>`;
 }
 
 async function openCurrencyModal(code) {

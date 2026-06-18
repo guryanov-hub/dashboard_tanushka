@@ -1035,7 +1035,14 @@ async function fetchHistory() {
     const data = await resp.json();
     const evts = (data.events || []).filter(e => e.text && e.year);
     if (evts.length) {
-      const getUrl = e => e.pages?.[0]?.content_urls?.desktop?.page || null;
+      const getUrl = e => {
+        const p = e.pages?.[0];
+        if (!p) return null;
+        return p.content_urls?.desktop?.page
+          || (p.titles?.canonical && `https://uk.wikipedia.org/wiki/${encodeURIComponent(p.titles.canonical)}`)
+          || (p.title && `https://uk.wikipedia.org/wiki/${encodeURIComponent(p.title)}`)
+          || null;
+      };
       const old    = evts.find(e => e.year < 1900) || evts[0];
       const modern = [...evts].reverse().find(e => e.year >= 1900 && e !== old) || null;
       worldEvts = modern
@@ -1049,10 +1056,7 @@ async function fetchHistory() {
 function renderHistory(worldEvts, uaEvt) {
   const row = (icon, year, text, url) => {
     const body = url
-      ? `<a href="${url}" target="_blank" rel="noopener noreferrer"
-           style="color:#e2e8f0;text-decoration:none;border-bottom:1px dotted #475569;cursor:pointer;"
-           onmouseenter="this.style.borderColor='#f97316';this.style.color='#f97316'"
-           onmouseleave="this.style.borderColor='#475569';this.style.color='#e2e8f0'">${text}</a>`
+      ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#e2e8f0;text-decoration:none;border-bottom:1px dotted #475569;" onmouseenter="this.style.color='#f97316';this.style.borderBottomColor='#f97316'" onmouseleave="this.style.color='#e2e8f0';this.style.borderBottomColor='#475569'">${text}</a>`
       : text;
     return `<div style="padding:9px 0;border-bottom:1px solid #1e293b;">
       <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:4px;">${icon} ${year}</div>

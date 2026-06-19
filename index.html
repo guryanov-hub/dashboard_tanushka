@@ -19,7 +19,7 @@
   [data-theme="light"] {
     --bg: #f0f4f8; --surface: #ffffff; --border: #d1dae3;
     --inset: #f1f5f9; --text: #1e293b; --muted: #64748b;
-    --accent: #f97316; --divider: #e2e8f0; --tab-off: #94a3b8;
+    --accent: #f97316; --divider: transparent; --tab-off: #94a3b8;
     --sk1: #e8edf2; --sk2: #d1dae3;
   }
 
@@ -1046,8 +1046,8 @@ function renderTennisDay() {
     } else {
       statusHtml = `<span class="muted" style="margin-left:10px;font-size:11px;">час уточнюється</span>`;
     }
-    return `<div class="fade-in" style="padding:8px 0;border-bottom:1px solid #1e293b;font-size:13px;">
-      <span style="color:#94a3b8">${m.tournament} · </span>${m.player} vs ${m.opponent}${m.flag ? ` <span class="muted">(${m.flag})</span>` : ''}${statusHtml}
+    return `<div class="fade-in" style="padding:8px 0;border-bottom:1px solid var(--divider);font-size:13px;">
+      <span class="muted">${m.tournament} · </span>${m.player} vs ${m.opponent}${m.flag ? ` <span class="muted">(${m.flag})</span>` : ''}${statusHtml}
     </div>`;
   }).join('');
 }

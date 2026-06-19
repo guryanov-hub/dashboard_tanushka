@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,14 +9,28 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <style>
-  * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-  body { background: #0f172a; color: #f8fafc; margin: 0; }
+  /* Theme variables */
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --border: #334155;
+    --inset: #0f172a; --text: #f8fafc; --muted: #94a3b8;
+    --accent: #f97316; --divider: #1e293b; --tab-off: #64748b;
+    --sk1: #1e293b; --sk2: #2d3f55;
+  }
+  [data-theme="light"] {
+    --bg: #f0f4f8; --surface: #ffffff; --border: #d1dae3;
+    --inset: #f1f5f9; --text: #1e293b; --muted: #64748b;
+    --accent: #f97316; --divider: #e2e8f0; --tab-off: #94a3b8;
+    --sk1: #e8edf2; --sk2: #d1dae3;
+  }
 
-  .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; }
-  .inset { background: #0f172a; border-radius: 10px; padding: 12px; }
+  * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); margin: 0; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+  .inset { background: var(--inset); border-radius: 10px; padding: 12px; }
 
   .skeleton {
-    background: linear-gradient(90deg, #1e293b 25%, #2d3f55 50%, #1e293b 75%);
+    background: linear-gradient(90deg, var(--sk1) 25%, var(--sk2) 50%, var(--sk1) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 8px;
@@ -26,8 +40,8 @@
   .fade-in { animation: fadeIn 0.4s ease forwards; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-  .accent { color: #f97316; }
-  .muted  { color: #94a3b8; }
+  .accent { color: var(--accent); }
+  .muted  { color: var(--muted); }
 
   .icon-wrap {
     width:40px; height:40px; border-radius:10px;
@@ -37,20 +51,31 @@
 
   /* Date picker */
   #moon-date {
-    background: #0f172a; border: 1px solid #334155; border-radius: 8px;
-    color: #f8fafc; padding: 4px 10px; font-size: 13px; cursor: pointer;
+    background: var(--inset); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 4px 10px; font-size: 13px; cursor: pointer;
     outline: none;
   }
-  #moon-date:focus { border-color: #f97316; }
+  #moon-date:focus { border-color: var(--accent); }
   #moon-date::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+  [data-theme="light"] #moon-date::-webkit-calendar-picker-indicator { filter: none; }
 
   /* Tabs */
   .tab-btn {
     flex:1; padding: 8px 12px; font-size: 12px; font-weight: 600;
     border-radius: 8px; border: none; cursor: pointer; transition: all .2s;
-    background: transparent; color: #64748b;
+    background: transparent; color: var(--tab-off);
   }
-  .tab-btn.active { background: #f97316; color: #fff; }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+
+  /* Header icon buttons */
+  .hdr-btn {
+    background: rgba(249,115,22,0.12); border: none; border-radius: 10px;
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); cursor: pointer; transition: color .15s, background .15s; flex-shrink: 0;
+  }
+  .hdr-btn:hover { background: rgba(249,115,22,0.25); color: var(--accent); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinning { animation: spin 0.6s linear; }
 
   /* Rate pill */
   .pill {
@@ -64,10 +89,17 @@
     letter-spacing: .06em; margin-bottom: 6px;
   }
 
+  /* History event links */
+  .hist-link {
+    color: var(--text); text-decoration: none;
+    border-bottom: 1px dotted var(--muted); transition: color .15s, border-color .15s;
+  }
+  .hist-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
   /* Warning banner */
   .moon-warn {
     border-radius: 8px; padding: 8px 12px; margin-bottom: 10px;
-    font-size: 12px; line-height: 1.5;
+    font-size: 12px; line-height: 1.5; color: var(--text);
   }
 
   /* Desktop layout */
@@ -82,6 +114,10 @@
   #tab-moon    { grid-column: 2; grid-row: 1; }
   #tab-tennis  { grid-column: 1; grid-row: 2; align-self: stretch; }
   #tab-history { grid-column: 2; grid-row: 2; align-self: stretch; }
+  /* Equal card heights within each row */
+  #tab-weather, #tab-currency, #tab-tennis, #tab-history { height: 100%; }
+  #tab-weather > .card, #tab-currency > .card,
+  #tab-tennis  > .card, #tab-history  > .card { height: 100%; }
   .mob-tab     { display: block; }
   .mob-nav     { display: none; }
 
@@ -97,8 +133,8 @@
       display: flex;
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      background: #1e293b;
-      border-top: 1px solid #334155;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
       z-index: 200;
       padding: 6px 0 env(safe-area-inset-bottom);
     }
@@ -107,9 +143,9 @@
       display: flex; flex-direction: column; align-items: center; gap: 3px;
       padding: 6px 4px;
       background: none; border: none;
-      color: #64748b; cursor: pointer; transition: color .15s;
+      color: var(--tab-off); cursor: pointer; transition: color .15s;
     }
-    .mob-nav-btn.active { color: #f97316; }
+    .mob-nav-btn.active { color: var(--accent); }
     .mob-nav-btn span { font-size: 10px; font-weight: 500; font-family: inherit; }
   }
 
@@ -119,18 +155,18 @@
     z-index:1000; overflow-y:auto; padding:20px;
   }
   #forecast-box {
-    background:#1e293b; border:1px solid #334155; border-radius:16px;
-    max-width:500px; margin:40px auto; padding:24px;
+    background: var(--surface); border: 1px solid var(--border); border-radius:16px;
+    max-width:500px; margin:40px auto; padding:24px; color: var(--text);
   }
   .fc-row {
     display:flex; align-items:center; gap:10px;
     padding:5px 8px; border-radius:8px; font-size:12px;
   }
-  .fc-row:hover { background:rgba(255,255,255,.04); }
+  .fc-row:hover { background: rgba(128,128,128,.08); }
   .forecast-link {
-    font-size:10px; color:#475569; margin-left:5px; cursor:pointer;
+    font-size:10px; color: var(--muted); margin-left:5px; cursor:pointer;
   }
-  .forecast-link:hover { color:#94a3b8; }
+  .forecast-link:hover { color: var(--text); }
 
   /* Currency modal */
   #currency-modal {
@@ -138,16 +174,20 @@
     z-index:1000; overflow-y:auto; padding:20px;
   }
   #currency-box {
-    background:#1e293b; border:1px solid #334155; border-radius:16px;
-    max-width:540px; margin:40px auto; padding:24px;
+    background: var(--surface); border: 1px solid var(--border); border-radius:16px;
+    max-width:540px; margin:40px auto; padding:24px; color: var(--text);
   }
   .curr-tab-btn {
     flex:1; padding:7px 10px; font-size:12px; font-weight:600;
     border-radius:8px; border:none; cursor:pointer; transition:all .2s;
-    background:transparent; color:#64748b;
+    background:transparent; color: var(--tab-off);
   }
   .curr-tab-btn.active { background:#f97316; color:#fff; }
 </style>
+<script>
+  /* Restore theme before render to prevent flash */
+  (function(){ const t=localStorage.getItem('theme'); if(t) document.documentElement.dataset.theme=t; })();
+</script>
 </head>
 <body style="min-height:100vh;padding:24px 32px;">
 
@@ -157,9 +197,17 @@
     <h1 style="font-size:22px;font-weight:700;margin:0 0 2px;">Live Dashboard</h1>
     <p class="muted" style="font-size:13px;margin:0;">Київ</p>
   </div>
-  <div style="text-align:right;">
-    <div class="muted" style="font-size:11px;margin-bottom:2px;">Оновлено</div>
-    <div id="last-updated" class="accent" style="font-family:monospace;font-size:13px;font-weight:600;">--:--:--</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="hdr-btn" id="refresh-btn" onclick="manualRefresh()" title="Оновити дані">
+      <i data-lucide="refresh-cw" style="width:16px;height:16px;" id="refresh-icon"></i>
+    </button>
+    <button class="hdr-btn" id="theme-btn" onclick="toggleTheme()" title="Змінити тему">
+      <i data-lucide="sun" style="width:16px;height:16px;" id="theme-icon"></i>
+    </button>
+    <div style="text-align:right;">
+      <div class="muted" style="font-size:11px;margin-bottom:2px;">Оновлено</div>
+      <div id="last-updated" class="accent" style="font-family:monospace;font-size:13px;font-weight:600;">--:--:--</div>
+    </div>
   </div>
 </header>
 
@@ -236,7 +284,7 @@
     </div>
 
     <!-- Phase strip -->
-    <div id="moon-phase-strip" style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:#0f172a;border-radius:10px;margin-bottom:16px;flex-wrap:wrap;">
+    <div id="moon-phase-strip" style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:var(--inset);border-radius:10px;margin-bottom:16px;flex-wrap:wrap;">
       <div style="font-size:44px;line-height:1" id="moon-emoji">—</div>
       <div>
         <div style="font-size:36px;font-weight:700;line-height:1;" class="accent" id="moon-day-num">—</div>
@@ -277,7 +325,7 @@
       </div>
       <button onclick="fetchTennis()" style="background:rgba(249,115,22,0.15);color:#f97316;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;">↻ Оновити</button>
     </div>
-    <div id="tennis-tabs" style="display:flex;gap:6px;background:#0f172a;border-radius:10px;padding:4px;margin-bottom:14px;overflow-x:auto;"></div>
+    <div id="tennis-tabs" style="display:flex;gap:6px;background:var(--inset);border-radius:10px;padding:4px;margin-bottom:14px;overflow-x:auto;"></div>
     <div id="tennis-content">
       <div class="muted" style="text-align:center;padding:24px;font-size:13px;">Завантаження...</div>
     </div>
@@ -549,7 +597,7 @@ function renderCurrency() {
     const chgSign  = chg >= 0 ? '+' : '';
     const arrow    = chg >= 0 ? '▲' : '▼';
     return `<div onclick="openCurrencyModal('${code}')"
-      style="background:#0f172a;border-radius:8px;padding:8px 12px;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;gap:8px;"
+      style="background:var(--inset);border-radius:8px;padding:8px 12px;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;gap:8px;"
       onmouseenter="this.style.opacity='.75'" onmouseleave="this.style.opacity='1'">
       <span class="muted" style="font-size:12px;flex:0 0 auto;">${label}</span>
       <span style="font-size:14px;font-weight:700;flex:1;text-align:right;">${rateStr}</span>
@@ -1113,10 +1161,10 @@ async function fetchHistory() {
 function renderHistory(worldEvt, uaEvt) {
   const row = (icon, year, text) => {
     const url = `https://www.google.com/search?q=${encodeURIComponent(year + ' ' + text)}`;
-    const body = `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#e2e8f0;text-decoration:none;border-bottom:1px dotted #475569;" onmouseenter="this.style.color='#f97316';this.style.borderBottomColor='#f97316'" onmouseleave="this.style.color='#e2e8f0';this.style.borderBottomColor='#475569'">${text}</a>`;
-    return `<div style="padding:9px 0;border-bottom:1px solid #1e293b;">
-      <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:4px;">${icon} ${year}</div>
-      <div style="font-size:12px;line-height:1.5;color:#e2e8f0;">${body}</div>
+    const body = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="hist-link">${text}</a>`;
+    return `<div style="padding:9px 0;border-bottom:1px solid var(--divider);">
+      <div style="font-size:10px;font-weight:600;color:var(--tab-off);margin-bottom:4px;">${icon} ${year}</div>
+      <div style="font-size:12px;line-height:1.5;color:var(--text);">${body}</div>
     </div>`;
   };
 
@@ -1149,8 +1197,33 @@ buildTennisTabs();
 refreshAll();
 setInterval(() => { updateTime(); fetchWeather(); }, 60000);
 
+// ── Theme ─────────────────────────────────────────────────────
+function updateThemeIcon() {
+  const isDark = document.documentElement.dataset.theme !== 'light';
+  document.getElementById('theme-btn').innerHTML =
+    `<i data-lucide="${isDark ? 'sun' : 'moon'}" style="width:16px;height:16px;"></i>`;
+  lucide.createIcons();
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.dataset.theme === 'light';
+  document.documentElement.dataset.theme = isLight ? 'dark' : 'light';
+  localStorage.setItem('theme', document.documentElement.dataset.theme);
+  updateThemeIcon();
+}
+
+// ── Manual refresh ────────────────────────────────────────────
+function manualRefresh() {
+  const svg = document.querySelector('#refresh-btn svg');
+  if (svg) { svg.style.animation = 'spin 0.6s linear'; svg.addEventListener('animationend', () => { svg.style.animation = ''; }, { once: true }); }
+  refreshAll();
+}
+
 // ── Mobile tab navigation ───────────────────────────────────────
+let activeMobileTab = 'weather';
+
 function switchMobileTab(tab) {
+  activeMobileTab = tab;
   document.querySelectorAll('.mob-tab').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.remove('active'));
   const panel = document.getElementById('tab-' + tab);
@@ -1160,10 +1233,11 @@ function switchMobileTab(tab) {
   window.scrollTo(0, 0);
 }
 
-// Init: activate weather tab on mobile
+// Init
 if (window.matchMedia('(max-width: 768px)').matches) {
   switchMobileTab('weather');
 }
+updateThemeIcon();
 </script>
 </body>
 </html>
